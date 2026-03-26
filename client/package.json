@@ -1,0 +1,22 @@
+{
+  "name": "doodle-jump",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "vite",
+    "dev:host": "vite --host",
+    "build": "vite build",
+    "build:watch": "vite build --watch",
+    "preview": "vite preview",
+    "serve:dist": "vite preview --host --port 4173 --strictPort",
+    "prod": "npm run build && npm run serve:dist"
+  },
+  "devDependencies": {
+    "vite": "^8.0.1"
+  },
+  "dependencies": {
+    "three": "^0.183.2"
+  }
+}

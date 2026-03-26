@@ -1,0 +1,146 @@
+:root {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #e8f6ff;
+  color: #152030;
+}
+
+#app {
+  width: 100%;
+  min-height: 100svh;
+}
+
+#game-shell {
+  position: relative;
+  width: min(100vw, 520px);
+  height: min(100svh, 860px);
+  margin: 0 auto;
+  border-left: 1px solid #b9d3ea;
+  border-right: 1px solid #b9d3ea;
+  background: #d7f0ff;
+  overflow: hidden;
+}
+
+#game-container {
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+#game-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#hud {
+  position: absolute;
+  z-index: 8;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+#score-label {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #a4c0d8;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+#overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.panel {
+  width: min(100%, 320px);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #9ab6cf;
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+}
+
+.panel h1,
+.panel h2 {
+  margin: 0 0 12px;
+  font-size: 24px;
+}
+
+.actions {
+  display: grid;
+  gap: 8px;
+}
+
+button {
+  border: 1px solid #7ca2c4;
+  background: #f8fcff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background: #edf7ff;
+}
+
+.hint {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.player-name {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.result {
+  margin: 8px 0 12px;
+}
+
+.score-list {
+  margin: 0 0 12px;
+  padding-left: 22px;
+  text-align: left;
+}
+
+.field-label {
+  display: block;
+  text-align: left;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.field-input {
+  width: 100%;
+  margin-bottom: 10px;
+  border: 1px solid #7ca2c4;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  #game-shell {
+    width: 100vw;
+    height: 100svh;
+    border: 0;
+  }
+}
