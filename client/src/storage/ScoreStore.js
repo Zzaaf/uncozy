@@ -1,8 +1,10 @@
 import {
   DEFAULT_PLAYER_NAME,
+  LANG_KEY,
   MAX_SCORES,
   PLAYER_NAME_KEY,
   SCORE_KEY,
+  SKIN_KEY,
 } from '../game/constants.js';
 
 export class ScoreStore {
@@ -69,6 +71,37 @@ export class ScoreStore {
       .slice(0, MAX_SCORES);
     localStorage.setItem(SCORE_KEY, JSON.stringify(next));
     return next;
+  }
+
+  getLang() {
+    try {
+      const raw = localStorage.getItem(LANG_KEY);
+      return raw === 'en' ? 'en' : 'ru';
+    } catch {
+      return 'ru';
+    }
+  }
+
+  setLang(lang) {
+    const safe = lang === 'en' ? 'en' : 'ru';
+    localStorage.setItem(LANG_KEY, safe);
+    return safe;
+  }
+
+  getSkin() {
+    try {
+      const raw = localStorage.getItem(SKIN_KEY);
+      const id = Number(raw);
+      return Number.isFinite(id) && id >= 0 && id <= 2 ? id : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  setSkin(id) {
+    const safe = Number.isFinite(id) && id >= 0 && id <= 2 ? id : 0;
+    localStorage.setItem(SKIN_KEY, String(safe));
+    return safe;
   }
 
   normalizeName(name) {

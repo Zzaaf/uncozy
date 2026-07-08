@@ -1,0 +1,111 @@
+const T = {
+  ru: {
+    title:            'DOODLE\nJUMP',
+    subtitle:         '★ PIXEL EDITION ★',
+
+    menu_start:       'СТАРТ',
+    menu_scores:      'РЕКОРДЫ',
+    menu_settings:    'НАСТРОЙКИ',
+    menu_exit:        'ВЫХОД',
+    menu_hint:        '← A/D → мышь или тач · ESC — пауза',
+    player_prefix:    '▶',
+    player_suffix:    '◀',
+
+    pause_title:      'ПАУЗА',
+    pause_resume:     'ПРОДОЛЖИТЬ',
+    pause_restart:    'НАЧАТЬ ЗАНОВО',
+    pause_hint:       'ESC — продолжить',
+
+    confirm_title:    'ЗАНОВО?',
+    confirm_msg:      'Текущий прогресс будет потерян!',
+    confirm_yes:      'ДА, НАЧАТЬ',
+    confirm_no:       'ОТМЕНА',
+
+    scores_title:     '🏆 РЕКОРДЫ',
+    scores_empty:     'Пока нет результатов',
+
+    settings_title:   'НАСТРОЙКИ',
+    settings_name:    'ИМЯ ИГРОКА',
+    settings_char:    'ПЕРСОНАЖ',
+    settings_lang:    'ЯЗЫК',
+    settings_save:    'СОХРАНИТЬ',
+
+    gameover_title:   '☠ GAME OVER',
+    gameover_score:   'Ваш счёт:',
+    gameover_restart: 'ЗАНОВО',
+    gameover_scores:  'РЕКОРДЫ',
+    gameover_menu:    'МЕНЮ',
+
+    back:             'НАЗАД',
+    score_label:      'ОЧКИ',
+
+    skin_0: 'ГЕРОЙ',
+    skin_1: 'РОБОТ',
+    skin_2: 'МАГ',
+
+    lang_ru: 'РУС',
+    lang_en: 'ENG',
+  },
+
+  en: {
+    title:            'DOODLE\nJUMP',
+    subtitle:         '★ PIXEL EDITION ★',
+
+    menu_start:       'START',
+    menu_scores:      'HIGH SCORES',
+    menu_settings:    'SETTINGS',
+    menu_exit:        'EXIT',
+    menu_hint:        '← A/D → mouse or touch · ESC — pause',
+    player_prefix:    '▶',
+    player_suffix:    '◀',
+
+    pause_title:      'PAUSED',
+    pause_resume:     'CONTINUE',
+    pause_restart:    'RESTART',
+    pause_hint:       'ESC — continue',
+
+    confirm_title:    'RESTART?',
+    confirm_msg:      'Current progress will be lost!',
+    confirm_yes:      'YES, RESTART',
+    confirm_no:       'CANCEL',
+
+    scores_title:     '🏆 HIGH SCORES',
+    scores_empty:     'No scores yet',
+
+    settings_title:   'SETTINGS',
+    settings_name:    'PLAYER NAME',
+    settings_char:    'CHARACTER',
+    settings_lang:    'LANGUAGE',
+    settings_save:    'SAVE',
+
+    gameover_title:   '☠ GAME OVER',
+    gameover_score:   'Your score:',
+    gameover_restart: 'RESTART',
+    gameover_scores:  'SCORES',
+    gameover_menu:    'MENU',
+
+    back:             'BACK',
+    score_label:      'SCORE',
+
+    skin_0: 'HERO',
+    skin_1: 'ROBOT',
+    skin_2: 'WIZARD',
+
+    lang_ru: 'RUS',
+    lang_en: 'ENG',
+  },
+};
+
+let _lang = 'ru';
+
+export function setLang(lang) {
+  _lang = lang === 'en' ? 'en' : 'ru';
+}
+
+export function getLang() {
+  return _lang;
+}
+
+export function t(key) {
+  return T[_lang]?.[key] ?? T.ru[key] ?? key;
+}

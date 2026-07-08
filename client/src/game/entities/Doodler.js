@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DOODLER, WORLD_WIDTH } from '../constants.js';
+import { DOODLER, WORLD_WIDTH, SUPER_JUMP_MULTIPLIER } from '../constants.js';
 
 export class Doodler {
   constructor(scene) {
@@ -7,37 +7,78 @@ export class Doodler {
     this.position = new THREE.Vector3(0, 3, 0);
     this.velocity = new THREE.Vector3(0, 0, 0);
     this.size = { width: DOODLER.width, height: DOODLER.height };
-    this.mesh = this.createMesh();
+    this.mesh = this._buildSkin(0);
     this.scene.add(this.mesh);
     this.syncMesh();
   }
 
-  createMesh() {
-    const body = new THREE.Group();
+  setSkin(skinId) {
+    this.scene.remove(this.mesh);
+    this.mesh = this._buildSkin(skinId);
+    this.scene.add(this.mesh);
+    this.syncMesh();
+  }
 
-    const torso = new THREE.Mesh(
-      new THREE.BoxGeometry(this.size.width, this.size.height * 0.75, 0.9),
-      new THREE.MeshLambertMaterial({ color: 0x5fcb4f }),
+  _buildSkin(skinId) {
+    switch (skinId) {
+      case 1:  return this._buildRobot();
+      case 2:  return this._buildWizard();
+      default: return this._buildHero();
+    }
+  }
+
+  // ── Skin 0: Hero ──────────────────────────────────────────
+  _buildHero() {
+    const g = new THREE.Group();
+    const W = this.size.width, H = this.size.height;
+
+    g.add(this._box(W, H * 0.75, 0.9, 0xffdd00, 0, 0, 0));          // body
+    g.add(this._box(W * 0.9, H * 0.22, 0.95, 0xff006e, 0, H * 0.15, 0)); // visor
+    g.add(this._box(0.22, 0.22, 0.1, 0xffffff, W * 0.18, H * 0.18, 0.52)); // eye white
+    g.add(this._box(0.1, 0.1, 0.1, 0x00e5ff, W * 0.21, H * 0.17, 0.6));   // pupil
+    return g;
+  }
+
+  // ── Skin 1: Robot ─────────────────────────────────────────
+  _buildRobot() {
+    const g = new THREE.Group();
+    const W = this.size.width, H = this.size.height;
+
+    g.add(this._box(W, H * 0.75, 0.9, 0x7788aa, 0, 0, 0));          // body
+    g.add(this._box(W * 0.55, H * 0.18, 1.0, 0x222244, 0, -H * 0.05, 0)); // chest panel
+    g.add(this._box(W * 0.07, H * 0.45, 0.1, 0x00ff88, 0, H * 0.58, 0));  // antenna stick
+    g.add(this._box(W * 0.2, H * 0.12, 0.15, 0x00ff88, 0, H * 0.82, 0));  // antenna top
+    g.add(this._box(W * 0.75, H * 0.16, 1.0, 0xff2200, 0, H * 0.28, 0));  // LED eye
+    g.add(this._box(W * 0.25, H * 0.09, 1.0, 0xff6644, 0, H * 0.28, 0));  // eye glow
+    g.add(this._box(0.06, H * 0.15, 0.1, 0x00ff88, -W * 0.22, H * 0.0, 0.45)); // left indicator
+    g.add(this._box(0.06, H * 0.15, 0.1, 0xff2200, W * 0.22, H * 0.0, 0.45));  // right indicator
+    return g;
+  }
+
+  // ── Skin 2: Wizard ────────────────────────────────────────
+  _buildWizard() {
+    const g = new THREE.Group();
+    const W = this.size.width, H = this.size.height;
+
+    g.add(this._box(W, H * 0.75, 0.9, 0x7700cc, 0, 0, 0));           // robe body
+    g.add(this._box(W, H * 0.08, 0.95, 0xffdd00, 0, H * 0.08, 0));   // belt
+    g.add(this._box(W * 0.55, H * 0.6, 0.85, 0x9900ee, 0, H * 0.65, 0));  // hat body
+    g.add(this._box(W * 1.2, H * 0.12, 0.8, 0xffdd00, 0, H * 0.37, 0));   // hat brim
+    g.add(this._box(0.12, 0.12, 0.95, 0xffdd00, -W * 0.18, H * 0.2, 0));  // left eye star
+    g.add(this._box(0.12, 0.12, 0.95, 0xffdd00, W * 0.18, H * 0.2, 0));   // right eye star
+    g.add(this._box(0.06, 0.06, 0.95, 0xffffff, -W * 0.18, H * 0.2, 0));  // left pupil
+    g.add(this._box(0.06, 0.06, 0.95, 0xffffff, W * 0.18, H * 0.2, 0));   // right pupil
+    g.add(this._box(0.15, 0.15, 0.9, 0xffdd00, 0, H * 0.7, 0));     // hat star
+    return g;
+  }
+
+  _box(w, h, d, color, x, y, z) {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(w, h, d),
+      new THREE.MeshBasicMaterial({ color }),
     );
-    torso.position.y = 0;
-    body.add(torso);
-
-    const eye = new THREE.Mesh(
-      new THREE.SphereGeometry(0.12, 12, 12),
-      new THREE.MeshBasicMaterial({ color: 0xffffff }),
-    );
-    eye.position.set(this.size.width * 0.2, this.size.height * 0.2, 0.5);
-    body.add(eye);
-
-    const pupil = new THREE.Mesh(
-      new THREE.SphereGeometry(0.05, 8, 8),
-      new THREE.MeshBasicMaterial({ color: 0x111111 }),
-    );
-    pupil.position.set(this.size.width * 0.22, this.size.height * 0.2, 0.59);
-    body.add(pupil);
-
-    body.castShadow = false;
-    return body;
+    mesh.position.set(x, y, z);
+    return mesh;
   }
 
   reset(positionY) {
@@ -53,12 +94,8 @@ export class Doodler {
     this.position.y += this.velocity.y * dt;
 
     const horizontalLimit = WORLD_WIDTH * 0.5;
-    if (this.position.x < -horizontalLimit) {
-      this.position.x = horizontalLimit;
-    }
-    if (this.position.x > horizontalLimit) {
-      this.position.x = -horizontalLimit;
-    }
+    if (this.position.x < -horizontalLimit) this.position.x = horizontalLimit;
+    if (this.position.x > horizontalLimit)  this.position.x = -horizontalLimit;
 
     this.syncMesh();
   }
@@ -67,16 +104,20 @@ export class Doodler {
     this.velocity.y = DOODLER.jumpVelocity;
   }
 
+  superBounce() {
+    this.velocity.y = DOODLER.jumpVelocity * SUPER_JUMP_MULTIPLIER;
+  }
+
   getBottom() {
     return this.position.y - this.size.height * 0.5;
   }
 
   getBounds() {
     return {
-      left: this.position.x - this.size.width * 0.45,
-      right: this.position.x + this.size.width * 0.45,
+      left:   this.position.x - this.size.width  * 0.45,
+      right:  this.position.x + this.size.width  * 0.45,
       bottom: this.position.y - this.size.height * 0.5,
-      top: this.position.y + this.size.height * 0.5,
+      top:    this.position.y + this.size.height * 0.5,
     };
   }
 
