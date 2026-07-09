@@ -22,22 +22,18 @@ export class AuthService {
     return { accessToken: this._sign(user), user };
   }
 
-  async login(email: string, password: string) {
-    const record = await this.users.findByEmail(email);
+  async login(username: string, password: string) {
+    const record = await this.users.findByUsername(username);
     if (!record) throw new UnauthorizedException('Invalid credentials');
 
     const valid = await bcrypt.compare(password, record.passwordHash);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
-    const { passwordHash: _ph, ...user } = record;
+    const { passwordHash: _ph, id: _id, ...user } = record;
     return { accessToken: this._sign(user), user };
   }
 
-  submitScore(userId: string, score: number) {
-    return this.users.submitScore(userId, score);
-  }
-
-  private _sign(user: { id: string; username: string; email: string }) {
-    return this.jwt.sign({ sub: user.id, username: user.username, email: user.email });
+  private _sign(user: { publicId: string; username: string; email: string }) {
+    return this.jwt.sign({ sub: user.publicId, username: user.username, email: user.email });
   }
 }

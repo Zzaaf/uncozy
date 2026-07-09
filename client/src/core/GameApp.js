@@ -82,9 +82,9 @@ export class GameApp {
     this.ui.showAuth();
   }
 
-  async login(email, password) {
+  async login(username, password) {
     try {
-      const { user } = await AuthApi.login(email, password);
+      const { user } = await AuthApi.login(username, password);
       this.playerName = user.username;
       this.scoreStore.setPlayerName(user.username);
       this.showMenu();

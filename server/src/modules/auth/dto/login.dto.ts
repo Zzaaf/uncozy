@@ -1,8 +1,11 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsString, MinLength, MaxLength, Matches } from 'class-validator';
 
 export class LoginDto {
-  @IsEmail()
-  email: string;
+  @IsString()
+  @MinLength(3)
+  @MaxLength(20)
+  @Matches(/^[a-zA-Z0-9_]+$/, { message: 'Username: only letters, numbers, underscores' })
+  username: string;
 
   @IsString()
   @MinLength(6)

@@ -14,11 +14,11 @@ export const AuthApi = {
     return data;
   },
 
-  async login(email, password) {
+  async login(username, password) {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(Array.isArray(data.message) ? data.message.join(', ') : (data.message || 'Login failed'));
@@ -62,7 +62,7 @@ export const AuthApi = {
     const token = this.getToken();
     if (!token) return;
     try {
-      await fetch('/api/auth/me/score', {
+      await fetch('/api/users/me/score', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

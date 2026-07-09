@@ -203,8 +203,8 @@ export class OverlayUI {
 
         ${isLogin ? `
           <form id="auth-form" class="auth-form">
-            <label class="field-label">${t('auth_email')}</label>
-            <input class="field-input" type="email" id="auth-email" autocomplete="email" required/>
+            <label class="field-label">${t('auth_username')}</label>
+            <input class="field-input" type="text" id="auth-username" maxlength="20" autocomplete="username" required/>
 
             <label class="field-label">${t('auth_password')}</label>
             <input class="field-input" type="password" id="auth-password" autocomplete="current-password" required/>
@@ -262,12 +262,12 @@ export class OverlayUI {
     if (!form) return;
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const email    = this.root.querySelector('#auth-email')?.value.trim();
+      const username = this.root.querySelector('#auth-username')?.value.trim();
       const password = this.root.querySelector('#auth-password')?.value;
       if (isLogin) {
-        this.callbacks.login?.(email, password);
+        this.callbacks.login?.(username, password);
       } else {
-        const username = this.root.querySelector('#auth-username')?.value.trim();
+        const email = this.root.querySelector('#auth-email')?.value.trim();
         this.callbacks.register?.(username, email, password);
       }
     });
