@@ -2,6 +2,7 @@ import { Body, Controller, Get, Patch, Request, UseGuards, ValidationPipe } from
 import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
 import { SubmitScoreDto } from './dto/submit-score.dto';
+import { UpdateUsernameDto } from './dto/update-username.dto';
 
 @Controller('api/users')
 @UseGuards(AuthGuard('jwt'))
@@ -11,6 +12,14 @@ export class UsersController {
   @Get('me')
   me(@Request() req) {
     return this.users.findByPublicId(req.user.publicId);
+  }
+
+  @Patch('me/username')
+  updateUsername(
+    @Request() req,
+    @Body(new ValidationPipe({ whitelist: true })) dto: UpdateUsernameDto,
+  ) {
+    return this.users.updateUsername(req.user.publicId, dto.username);
   }
 
   @Get('leaderboard')

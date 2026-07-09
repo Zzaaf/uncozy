@@ -41,6 +41,18 @@ export class UsersService {
     });
   }
 
+  async updateUsername(publicId: string, newUsername: string) {
+    try {
+      return await this.prisma.user.update({
+        where: { publicId },
+        data: { username: newUsername },
+        select: PUBLIC_SELECT,
+      });
+    } catch {
+      throw new ConflictException('Username already taken');
+    }
+  }
+
   async getLeaderboard(currentPublicId: string) {
     const top = await this.prisma.user.findMany({
       orderBy: { highScore: 'desc' },

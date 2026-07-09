@@ -121,7 +121,7 @@ export class OverlayUI {
     this.bindButtons();
   }
 
-  showSettings(playerName, currentSkin = 0, currentLang = 'ru') {
+  showSettings(playerName, currentSkin = 0, currentLang = 'ru', errorMsg = '') {
     const skinCards = SKIN_PREVIEWS.map((svg, i) => `
       <div class="skin-card ${i === currentSkin ? 'selected' : ''}" data-skin="${i}">
         <div class="skin-preview">${svg}</div>
@@ -129,13 +129,19 @@ export class OverlayUI {
       </div>
     `).join('');
 
+    const error = errorMsg
+      ? `<p class="auth-error">⚠ ${this.escapeHtml(errorMsg)}</p>`
+      : '';
+
     this.root.innerHTML = `
       <div class="panel">
         <h2>${t('settings_title')}</h2>
+        ${error}
         <form id="settings-form">
-          <label class="field-label" for="player-name-input">${t('settings_name')}</label>
-          <input id="player-name-input" class="field-input" type="text" maxlength="24"
+          <label class="field-label" for="username-input">${t('settings_name')}</label>
+          <input id="username-input" class="field-input" type="text" maxlength="20"
             value="${this.escapeHtml(playerName)}" autocomplete="off" spellcheck="false"/>
+          <p class="field-hint">${t('auth_username_hint')}</p>
 
           <label class="field-label">${t('settings_char')}</label>
           <div class="skin-picker">${skinCards}</div>
@@ -284,11 +290,11 @@ export class OverlayUI {
         if (!this.callbacks[action]) return;
 
         if (action === 'save-settings') {
-          const nameInput = this.root.querySelector('#player-name-input');
+          const nameInput = this.root.querySelector('#username-input');
           const skinInput = this.root.querySelector('#skin-input');
           const langInput = this.root.querySelector('#lang-input');
           this.callbacks[action](
-            nameInput ? nameInput.value : '',
+            nameInput ? nameInput.value.trim() : '',
             skinInput ? Number(skinInput.value) : 0,
             langInput ? langInput.value : 'ru',
           );
@@ -323,11 +329,11 @@ export class OverlayUI {
     if (form && this.callbacks['save-settings']) {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
-        const nameInput = this.root.querySelector('#player-name-input');
+        const nameInput = this.root.querySelector('#username-input');
         const skinInput = this.root.querySelector('#skin-input');
         const langInput = this.root.querySelector('#lang-input');
         this.callbacks['save-settings'](
-          nameInput ? nameInput.value : '',
+          nameInput ? nameInput.value.trim() : '',
           skinInput ? Number(skinInput.value) : 0,
           langInput ? langInput.value : 'ru',
         );

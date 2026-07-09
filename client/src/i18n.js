@@ -57,8 +57,10 @@ const T = {
     auth_logout:       'ВЫЙТИ ИЗ АККАУНТА',
     auth_hint_login:   'Нет аккаунта? → вкладка РЕГИСТРАЦИЯ',
     auth_hint_reg:     'Уже есть аккаунт? Перейди на вкладку ВХОД',
-    auth_username_hint:'3–20 символов: буквы, цифры, _',
-    auth_pass_hint:    'Минимум 6 символов',
+    auth_username_hint:   '3–20 символов: буквы, цифры, _',
+    auth_pass_hint:       'Минимум 6 символов',
+    err_username_taken:   'Этот ник уже занят',
+    err_username_invalid: 'Ник: 3–20 символов, буквы/цифры/_',
   },
 
   en: {
@@ -119,8 +121,10 @@ const T = {
     auth_logout:       'LOG OUT',
     auth_hint_login:   'No account? → REGISTER tab',
     auth_hint_reg:     'Have an account? Switch to LOGIN tab',
-    auth_username_hint:'3–20 chars: letters, numbers, _',
-    auth_pass_hint:    'At least 6 characters',
+    auth_username_hint:   '3–20 chars: letters, numbers, _',
+    auth_pass_hint:       'At least 6 characters',
+    err_username_taken:   'This username is already taken',
+    err_username_invalid: 'Username: 3–20 chars, letters/numbers/_',
   },
 };
 

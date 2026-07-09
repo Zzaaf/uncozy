@@ -33,6 +33,10 @@ export class LeaderboardUI {
     this._updateLiveBadge();
   }
 
+  refresh() {
+    this._fetch();
+  }
+
   updateLang() {
     if (this._data) this._renderData(this._data);
     else this._renderSkeleton();

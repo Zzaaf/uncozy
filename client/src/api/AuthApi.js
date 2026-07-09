@@ -58,6 +58,28 @@ export const AuthApi = {
 
   isLoggedIn() { return !!this.getToken(); },
 
+  async updateUsername(username) {
+    const token = this.getToken();
+    if (!token) throw new Error('Not authenticated');
+    const res = await fetch('/api/users/me/username', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ username }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(Array.isArray(data.message) ? data.message.join(', ') : (data.message || 'Failed to update username'));
+    // Update cached user
+    const user = this.getUser();
+    if (user) {
+      user.username = username;
+      localStorage.setItem('doodle_jump_user', JSON.stringify(user));
+    }
+    return data;
+  },
+
   async getLeaderboard() {
     const token = this.getToken();
     if (!token) return null;

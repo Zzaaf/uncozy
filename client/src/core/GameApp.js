@@ -147,10 +147,24 @@ export class GameApp {
     this.ui.showSettings(this.playerName, this.skinId, this.lang);
   }
 
-  saveSettings(nextName, nextSkinId, nextLang) {
-    this.playerName = this.scoreStore.setPlayerName(nextName);
-    this.skinId     = this.scoreStore.setSkin(nextSkinId);
-    this.lang       = this.scoreStore.setLang(nextLang);
+  async saveSettings(nextName, nextSkinId, nextLang) {
+    const usernameChanged = nextName && nextName !== this.playerName;
+    if (usernameChanged) {
+      try {
+        await AuthApi.updateUsername(nextName);
+      } catch (err) {
+        const msg = /taken|занят/i.test(err.message)
+          ? t('err_username_taken')
+          : t('err_username_invalid');
+        this.ui.showSettings(this.playerName, nextSkinId, this.lang, msg);
+        return;
+      }
+      this.playerName = nextName;
+      this.scoreStore.setPlayerName(nextName);
+      this.leaderboardUI?.refresh();
+    }
+    this.skinId = this.scoreStore.setSkin(nextSkinId);
+    this.lang   = this.scoreStore.setLang(nextLang);
     setLang(nextLang);
     this.updateScoreLabel();
     this.legendUI?.updateLang();

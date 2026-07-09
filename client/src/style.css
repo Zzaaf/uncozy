@@ -61,6 +61,19 @@ body {
 
 @media (min-width: 800px) {
   .side-panel { display: flex; }
+  .hint { display: none; }
+
+  /* Equal thirds: legend | game | leaderboard */
+  #app {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    justify-content: unset;
+  }
+  #game-shell {
+    flex-shrink: unset;
+    width: 100% !important;
+    max-width: none;
+  }
 }
 
 /* No border between panel and game shell */
@@ -1003,7 +1016,7 @@ button[data-action="restart"]:hover {
 
 .field-hint {
   margin: -10px 0 14px;
-  font-size: 5px;
+  font-size: 7px;
   color: rgba(100, 130, 160, 0.7);
   letter-spacing: 0.5px;
   line-height: 2;
