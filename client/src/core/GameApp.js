@@ -17,10 +17,12 @@ const GAME_STATES = {
 };
 
 export class GameApp {
-  constructor({ gameContainer, overlayRoot, scoreValueElement, scoreLabelElement }) {
+  constructor({ gameContainer, overlayRoot, scoreValueElement, scoreLabelElement, legendUI, leaderboardUI }) {
     this.gameContainer     = gameContainer;
     this.scoreValueElement = scoreValueElement;
     this.scoreLabelElement = scoreLabelElement;
+    this.legendUI          = legendUI;
+    this.leaderboardUI     = leaderboardUI;
 
     this.scoreStore = new ScoreStore();
     this.playerName = this.scoreStore.getPlayerName();
@@ -71,6 +73,7 @@ export class GameApp {
     if (user) {
       this.playerName = user.username;
       this.scoreStore.setPlayerName(user.username);
+      this.leaderboardUI?.start();
       this.showMenu();
     } else {
       this.showAuth();
@@ -87,6 +90,7 @@ export class GameApp {
       const { user } = await AuthApi.login(username, password);
       this.playerName = user.username;
       this.scoreStore.setPlayerName(user.username);
+      this.leaderboardUI?.start();
       this.showMenu();
     } catch (err) {
       this.ui.showAuthError(err.message);
@@ -98,6 +102,7 @@ export class GameApp {
       const { user } = await AuthApi.register(username, email, password);
       this.playerName = user.username;
       this.scoreStore.setPlayerName(user.username);
+      this.leaderboardUI?.start();
       this.showMenu();
     } catch (err) {
       this.ui.showAuthError(err.message);
@@ -107,6 +112,7 @@ export class GameApp {
   logout() {
     AuthApi.logout();
     cancelAnimationFrame(this.rafId);
+    this.leaderboardUI?.stop();
     this.showAuth();
   }
 
@@ -147,6 +153,8 @@ export class GameApp {
     this.lang       = this.scoreStore.setLang(nextLang);
     setLang(nextLang);
     this.updateScoreLabel();
+    this.legendUI?.updateLang();
+    this.leaderboardUI?.updateLang();
     this._goBack();
   }
 
@@ -185,6 +193,7 @@ export class GameApp {
     const doShoot = this.input.consumeShoot();
     this.gameWorld.update(dt, this.input.getHorizontal(), doShoot);
     this.updateScore(this.gameWorld.score);
+    this.leaderboardUI?.setLiveScore(this.gameWorld.score, true);
 
     if (this.gameWorld.heartPickedUp) {
       this.gameWorld.heartPickedUp = false;
@@ -208,6 +217,7 @@ export class GameApp {
   finishRun() {
     this.state       = GAME_STATES.GAME_OVER;
     this._backTarget = GAME_STATES.MENU;
+    this.leaderboardUI?.setLiveScore(0, false);
     const score = this.gameWorld.score;
     const saved = this.scoreStore.saveScore(score, this.playerName);
     if (!saved.length) this.scoreStore.saveScore(0, this.playerName);

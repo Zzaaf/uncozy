@@ -13,6 +13,11 @@ export class UsersController {
     return this.users.findByPublicId(req.user.publicId);
   }
 
+  @Get('leaderboard')
+  leaderboard(@Request() req) {
+    return this.users.getLeaderboard(req.user.publicId);
+  }
+
   @Patch('me/score')
   submitScore(
     @Request() req,

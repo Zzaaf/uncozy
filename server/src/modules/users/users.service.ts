@@ -41,6 +41,42 @@ export class UsersService {
     });
   }
 
+  async getLeaderboard(currentPublicId: string) {
+    const top = await this.prisma.user.findMany({
+      orderBy: { highScore: 'desc' },
+      take: 10,
+      select: { publicId: true, username: true, highScore: true },
+    });
+
+    const me = await this.prisma.user.findUnique({
+      where: { publicId: currentPublicId },
+      select: { publicId: true, username: true, highScore: true },
+    });
+
+    let myRank: number | null = null;
+    if (me) {
+      const above = await this.prisma.user.count({
+        where: { highScore: { gt: me.highScore } },
+      });
+      myRank = above + 1;
+    }
+
+    const entries = top.map((u, i) => ({
+      rank: i + 1,
+      username: u.username,
+      highScore: u.highScore,
+      isMe: u.publicId === currentPublicId,
+    }));
+
+    const meInTop = entries.some(e => e.isMe);
+    const myEntry =
+      me && myRank !== null && !meInTop
+        ? { rank: myRank, username: me.username, highScore: me.highScore }
+        : null;
+
+    return { entries, myEntry };
+  }
+
   async create(username: string, email: string, password: string) {
     const passwordHash = await bcrypt.hash(password, 10);
     try {

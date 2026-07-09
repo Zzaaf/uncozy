@@ -58,6 +58,20 @@ export const AuthApi = {
 
   isLoggedIn() { return !!this.getToken(); },
 
+  async getLeaderboard() {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const res = await fetch('/api/users/leaderboard', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      return res.json();
+    } catch {
+      return null;
+    }
+  },
+
   async submitScore(score) {
     const token = this.getToken();
     if (!token) return;

@@ -58,7 +58,15 @@ export class ScoreStore {
         })
         .filter(Boolean);
 
-      return normalized.sort((a, b) => b.score - a.score).slice(0, MAX_SCORES);
+      // Keep only the best score per player name
+      const best = new Map();
+      for (const entry of normalized) {
+        const key = entry.name.toLowerCase();
+        if (!best.has(key) || best.get(key).score < entry.score) {
+          best.set(key, entry);
+        }
+      }
+      return [...best.values()].sort((a, b) => b.score - a.score).slice(0, MAX_SCORES);
     } catch {
       return [];
     }
