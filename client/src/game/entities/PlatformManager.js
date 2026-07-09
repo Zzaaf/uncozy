@@ -6,7 +6,12 @@ const CUBE_SIZE     = 0.38;
 const CUBE_GAP      = 0.07;
 const CUBE_COUNT    = 6;
 const SUPER_CHANCE  = 0.18;
+const FLOAT_CHANCE  = 0.13;
 const HEART_CHANCE  = 0.07;
+const FLOAT_ANIM_SPEED   = 3.5;  // rad/s
+const FLOAT_AMPLITUDE    = 0.09; // world units
+const FLOAT_FALL_SPEED   = 12;   // world units/s
+const FLOAT_FALL_DURATION = 0.3; // seconds before recycle
 
 const TOTAL_W = CUBE_COUNT * CUBE_SIZE + (CUBE_COUNT - 1) * CUBE_GAP;
 const START_X = -TOTAL_W / 2 + CUBE_SIZE / 2;
@@ -66,6 +71,27 @@ export class PlatformManager {
         heart.position.y  = CUBE_SIZE + 0.22 + Math.sin(this._time * 3 + platform.position.x) * 0.07;
       }
 
+      // Float platform: wave each cube individually
+      if (platform.userData.type === 'float' && !platform.userData.floatConsumed) {
+        for (let c = 1; c <= CUBE_COUNT; c++) {
+          const cube = platform.children[c];
+          if (cube && cube.userData.floatPhase !== undefined) {
+            cube.position.y = cube.userData.baseY +
+              Math.sin(this._time * FLOAT_ANIM_SPEED + cube.userData.floatPhase) * FLOAT_AMPLITUDE;
+          }
+        }
+      }
+
+      // Fall-away animation for consumed float platforms
+      if (platform.userData.floatConsumed) {
+        platform.userData.floatTimer += dt;
+        platform.position.y -= FLOAT_FALL_SPEED * dt;
+        if (platform.userData.floatTimer >= FLOAT_FALL_DURATION) {
+          this._recyclePlatform(platform, highest, score);
+        }
+        continue;
+      }
+
       // Recycle off-screen platforms
       if (platform.position.y < topVisibleY - 30) {
         this._recyclePlatform(platform, highest, score);
@@ -76,6 +102,7 @@ export class PlatformManager {
   getCollidingPlatform(doodlerBounds, previousBottom, isFalling) {
     if (!isFalling) return null;
     for (const platform of this.platforms) {
+      if (platform.userData.floatConsumed) continue;
       const pLeft  = platform.position.x - PLATFORM.width  * 0.5;
       const pRight = platform.position.x + PLATFORM.width  * 0.5;
       const pTop   = platform.position.y + PLATFORM.height * 0.5;
@@ -90,6 +117,7 @@ export class PlatformManager {
   // Returns true if any platform top is between fromY and toY at the given X
   isProjectileBlocked(x, fromY, toY) {
     for (const platform of this.platforms) {
+      if (platform.userData.floatConsumed) continue;
       const pLeft  = platform.position.x - PLATFORM.width * 0.5;
       const pRight = platform.position.x + PLATFORM.width * 0.5;
       if (x < pLeft || x > pRight) continue;
@@ -119,7 +147,8 @@ export class PlatformManager {
 
   _addPlatform(x, y, score) {
     const isSuper = score >= SUPER_SCORE_THRESHOLD && Math.random() < SUPER_CHANCE;
-    const group   = this._buildGroup(isSuper);
+    const isFloat = !isSuper && Math.random() < FLOAT_CHANCE;
+    const group   = this._buildGroup(isSuper, isFloat);
 
     if (score >= HEART_SCORE_THRESHOLD && Math.random() < HEART_CHANCE) {
       const h       = this._buildHeartPickup();
@@ -143,7 +172,8 @@ export class PlatformManager {
 
     // Rebuild children
     const isSuper = score >= SUPER_SCORE_THRESHOLD && Math.random() < SUPER_CHANCE;
-    this._fillGroup(platform, isSuper);
+    const isFloat = !isSuper && Math.random() < FLOAT_CHANCE;
+    this._fillGroup(platform, isSuper, isFloat);
 
     // Maybe add heart
     platform.userData.heart          = null;
@@ -158,20 +188,20 @@ export class PlatformManager {
     platform.position.set(x, y, 0);
   }
 
-  _buildGroup(isSuper) {
+  _buildGroup(isSuper, isFloat = false) {
     const group = new THREE.Group();
     group.userData.heart          = null;
     group.userData.heartCollected = false;
-    this._fillGroup(group, isSuper);
+    this._fillGroup(group, isSuper, isFloat);
     return group;
   }
 
-  _fillGroup(group, isSuper) {
+  _fillGroup(group, isSuper, isFloat = false) {
     // Glow halo (only visible for super)
     const glow    = new THREE.Mesh(this._glowGeo, this._glowMat);
     glow.position.z      = -0.15;
     glow.visible         = isSuper;
-    group.add(glow);
+    group.add(glow); // index 0 — always the glow
 
     // Cubes
     const mat = isSuper
@@ -180,15 +210,23 @@ export class PlatformManager {
 
     for (let i = 0; i < CUBE_COUNT; i++) {
       const cube = new THREE.Mesh(this._cubeGeo, mat);
+      const baseY = (Math.random() - 0.5) * 0.05;
       cube.position.set(
         START_X + i * (CUBE_SIZE + CUBE_GAP),
-        (Math.random() - 0.5) * 0.05,
+        baseY,
         0,
       );
-      group.add(cube);
+      if (isFloat) {
+        cube.userData.baseY       = baseY;
+        // Spread phases evenly across the row so cubes wave sequentially
+        cube.userData.floatPhase  = (i / CUBE_COUNT) * Math.PI * 2;
+      }
+      group.add(cube); // indices 1..6
     }
 
-    group.userData.type = isSuper ? 'super' : 'normal';
+    group.userData.type          = isSuper ? 'super' : isFloat ? 'float' : 'normal';
+    group.userData.floatConsumed = false;
+    group.userData.floatTimer    = 0;
   }
 
   _buildHeartPickup() {

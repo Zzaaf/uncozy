@@ -153,6 +153,11 @@ export class GameWorld {
         platform.position.y + PLATFORM.height * 0.5 + this.doodler.size.height / 2;
       if (platform.userData.type === 'super') this.doodler.superBounce();
       else this.doodler.bounce();
+      // Float platform falls away after one bounce
+      if (platform.userData.type === 'float' && !platform.userData.floatConsumed) {
+        platform.userData.floatConsumed = true;
+        platform.userData.floatTimer    = 0;
+      }
     }
 
     // Barrier blocks player from below (bounce back)
