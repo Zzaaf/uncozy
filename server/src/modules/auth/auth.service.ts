@@ -33,6 +33,10 @@ export class AuthService {
     return { accessToken: this._sign(user), user };
   }
 
+  submitScore(userId: string, score: number) {
+    return this.users.submitScore(userId, score);
+  }
+
   private _sign(user: { id: string; username: string; email: string }) {
     return this.jwt.sign({ sub: user.id, username: user.username, email: user.email });
   }

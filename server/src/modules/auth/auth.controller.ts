@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Post, UseGuards, Request, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Get, Post, Patch, UseGuards, Request, ValidationPipe } from '@nestjs/common';
+import { IsInt, Min } from 'class-validator';
+
+class SubmitScoreDto {
+  @IsInt()
+  @Min(0)
+  score: number;
+}
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -22,5 +29,14 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   me(@Request() req) {
     return { user: req.user };
+  }
+
+  @Patch('me/score')
+  @UseGuards(AuthGuard('jwt'))
+  submitScore(
+    @Request() req,
+    @Body(new ValidationPipe({ whitelist: true })) dto: SubmitScoreDto,
+  ) {
+    return this.auth.submitScore(req.user.id, dto.score);
   }
 }

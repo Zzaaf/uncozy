@@ -208,9 +208,11 @@ export class GameApp {
   finishRun() {
     this.state       = GAME_STATES.GAME_OVER;
     this._backTarget = GAME_STATES.MENU;
-    const saved = this.scoreStore.saveScore(this.gameWorld.score, this.playerName);
+    const score = this.gameWorld.score;
+    const saved = this.scoreStore.saveScore(score, this.playerName);
     if (!saved.length) this.scoreStore.saveScore(0, this.playerName);
-    this.ui.showGameOver(this.gameWorld.score);
+    AuthApi.submitScore(score);
+    this.ui.showGameOver(score);
   }
 
   exitGame() {

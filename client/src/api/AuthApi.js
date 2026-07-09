@@ -57,4 +57,19 @@ export const AuthApi = {
   },
 
   isLoggedIn() { return !!this.getToken(); },
+
+  async submitScore(score) {
+    const token = this.getToken();
+    if (!token) return;
+    try {
+      await fetch('/api/auth/me/score', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ score: Math.floor(score) }),
+      });
+    } catch { /* silent — offline or network error */ }
+  },
 };
