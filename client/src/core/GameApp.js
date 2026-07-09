@@ -137,9 +137,17 @@ export class GameApp {
     this.updateScore(0);
   }
 
-  showScores() {
+  async showScores() {
     this.state = GAME_STATES.SCORES;
-    this.ui.showScores(this.scoreStore.getScores());
+    this.ui.showScores([]);
+    const data = await AuthApi.getLeaderboard();
+    if (data?.entries) {
+      const scores = data.entries.map(e => ({ name: e.username, score: e.highScore }));
+      if (data.myEntry && !data.entries.some(e => e.isMe)) {
+        scores.push({ name: data.myEntry.username, score: data.myEntry.highScore });
+      }
+      this.ui.showScores(scores);
+    }
   }
 
   showSettings() {

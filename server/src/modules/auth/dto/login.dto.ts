@@ -4,7 +4,7 @@ export class LoginDto {
   @IsString()
   @MinLength(3)
   @MaxLength(20)
-  @Matches(/^[a-zA-Z0-9_]+$/, { message: 'Username: only letters, numbers, underscores' })
+  @Matches(/^[a-zA-Z0-9_Ѐ-ӿ]+$/, { message: 'Username: only letters, numbers, underscores' })
   username: string;
 
   @IsString()

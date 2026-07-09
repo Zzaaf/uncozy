@@ -1,12 +1,16 @@
 import { Body, Controller, Get, Post, UseGuards, Request, ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
+import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
 @Controller('api/auth')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly users: UsersService,
+  ) {}
 
   @Post('register')
   register(@Body(new ValidationPipe({ whitelist: true })) dto: RegisterDto) {
@@ -20,7 +24,8 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
-  me(@Request() req) {
-    return { user: req.user };
+  async me(@Request() req) {
+    const user = await this.users.findByPublicId(req.user.publicId);
+    return { user };
   }
 }
