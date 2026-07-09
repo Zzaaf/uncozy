@@ -2,6 +2,11 @@ import * as THREE from 'three';
 import { CAMERA, PLATFORM, WORLD_HEIGHT, WORLD_WIDTH } from './constants.js';
 import { Doodler } from './entities/Doodler.js';
 import { PlatformManager } from './entities/PlatformManager.js';
+import { BarrierManager } from './entities/BarrierManager.js';
+
+const PROJECTILE_SPEED = 24;
+const PROJ_W = 0.14;
+const PROJ_H = 0.38;
 
 export class GameWorld {
   constructor(canvasHost) {
@@ -29,10 +34,17 @@ export class GameWorld {
     this.addPixelGrid();
 
     this.platformManager = new PlatformManager(this.scene);
-    this.doodler = new Doodler(this.scene);
-    this.score        = 0;
-    this.highestY     = 0;
-    this.isGameOver   = false;
+    this.barrierManager  = new BarrierManager(this.scene);
+    this.doodler         = new Doodler(this.scene);
+
+    // Shared projectile geometry/material (one projectile at a time)
+    this._projGeo = new THREE.BoxGeometry(PROJ_W, PROJ_H, PROJ_W);
+    this._projMat = new THREE.MeshBasicMaterial({ color: 0xffdd00 });
+    this._projectile = null; // { mesh, y, prevY }
+
+    this.score         = 0;
+    this.highestY      = 0;
+    this.isGameOver    = false;
     this.heartPickedUp = false;
     this.resize();
   }
@@ -50,7 +62,7 @@ export class GameWorld {
   addStarfield() {
     const count = 500;
     const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
+    const colors    = new Float32Array(count * 3);
     const starColors = [
       [1, 1, 1], [0.6, 0.9, 1], [1, 0.85, 0.65], [0.85, 0.65, 1], [0.6, 1, 0.85],
     ];
@@ -59,9 +71,7 @@ export class GameWorld {
       positions[i * 3 + 1] = Math.random() * 3000;
       positions[i * 3 + 2] = -9;
       const c = starColors[Math.floor(Math.random() * starColors.length)];
-      colors[i * 3]     = c[0];
-      colors[i * 3 + 1] = c[1];
-      colors[i * 3 + 2] = c[2];
+      colors[i * 3] = c[0]; colors[i * 3 + 1] = c[1]; colors[i * 3 + 2] = c[2];
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -73,12 +83,8 @@ export class GameWorld {
   addPixelGrid() {
     const XMIN = -8, XMAX = 8, YMIN = -20, YMAX = 3000;
     const pts = [];
-    for (let y = YMIN; y <= YMAX; y += 2) {
-      pts.push(XMIN, y, -7,  XMAX, y, -7);
-    }
-    for (let x = XMIN; x <= XMAX; x += 2) {
-      pts.push(x, YMIN, -7,  x, YMAX, -7);
-    }
+    for (let y = YMIN; y <= YMAX; y += 2) pts.push(XMIN, y, -7, XMAX, y, -7);
+    for (let x = XMIN; x <= XMAX; x += 2) pts.push(x, YMIN, -7, x, YMAX, -7);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
     const mat = new THREE.LineBasicMaterial({ color: 0x1c1c44, transparent: true, opacity: 0.7 });
@@ -92,72 +98,126 @@ export class GameWorld {
     this.heartPickedUp = false;
     this.camera.position.y = WORLD_HEIGHT / 2;
     this.platformManager.reset(0);
+    this.barrierManager.reset();
+    this._removeProjectile();
     this.doodler.setSkin(skinId);
     this.doodler.reset(5);
     this.render();
   }
 
   resize() {
-    const width = this.canvasHost.clientWidth || 1;
+    const width  = this.canvasHost.clientWidth  || 1;
     const height = this.canvasHost.clientHeight || 1;
     const aspect = width / height;
     const baseHeight = WORLD_HEIGHT;
-    const baseWidth = baseHeight * aspect;
+    const baseWidth  = baseHeight * aspect;
 
-    this.camera.left = -baseWidth / 2;
-    this.camera.right = baseWidth / 2;
-    this.camera.top = baseHeight / 2;
+    this.camera.left   = -baseWidth / 2;
+    this.camera.right  =  baseWidth / 2;
+    this.camera.top    =  baseHeight / 2;
     this.camera.bottom = -baseHeight / 2;
     this.camera.updateProjectionMatrix();
-
     this.renderer.setSize(width, height, false);
   }
 
-  update(dt, horizontalInput) {
-    if (this.isGameOver) {
-      return;
-    }
+  shoot(x) {
+    if (this._projectile) return; // one shot at a time
+    const startY = this.doodler.position.y + this.doodler.size.height * 0.5;
+    const mesh   = new THREE.Mesh(this._projGeo, this._projMat);
+    mesh.position.set(x, startY, 0.5);
+    this.scene.add(mesh);
+    this._projectile = { mesh, x, y: startY, prevY: startY };
+  }
 
-    const previousBottom = this.doodler.getBottom();
+  _removeProjectile() {
+    if (!this._projectile) return;
+    this.scene.remove(this._projectile.mesh);
+    this._projectile = null;
+  }
+
+  update(dt, horizontalInput, doShoot = false) {
+    if (this.isGameOver) return;
+
+    // ── Player ──────────────────────────────────────────────
+    const previousBottom  = this.doodler.getBottom();
+    const previousTop     = this.doodler.getBounds().top;
     this.doodler.update(dt, horizontalInput);
     const bounds = this.doodler.getBounds();
 
+    // Platform bounce
     const platform = this.platformManager.getCollidingPlatform(
-      bounds,
-      previousBottom,
-      this.doodler.velocity.y < 0,
+      bounds, previousBottom, this.doodler.velocity.y < 0,
     );
     if (platform) {
       this.doodler.position.y =
         platform.position.y + PLATFORM.height * 0.5 + this.doodler.size.height / 2;
-      if (platform.userData.type === 'super') {
-        this.doodler.superBounce();
-      } else {
-        this.doodler.bounce();
+      if (platform.userData.type === 'super') this.doodler.superBounce();
+      else this.doodler.bounce();
+    }
+
+    // Barrier blocks player from below (bounce back)
+    if (this.doodler.velocity.y > 0) {
+      const barrier = this.barrierManager.checkPlayerCollision(bounds.top, previousTop);
+      if (barrier) {
+        this.doodler.velocity.y = -this.doodler.velocity.y * 0.25;
+        this.doodler.position.y = barrier.y - 0.5 - this.doodler.size.height * 0.5;
+        this.doodler.syncMesh();
       }
     }
 
-    if (this.platformManager.checkHeartPickup(bounds)) {
-      this.heartPickedUp = true;
-    }
+    // Heart pickup
+    if (this.platformManager.checkHeartPickup(bounds)) this.heartPickedUp = true;
 
+    // Score
     if (this.doodler.position.y > this.highestY) {
       const delta = this.doodler.position.y - this.highestY;
       this.highestY = this.doodler.position.y;
       this.score += Math.max(1, Math.floor(delta * 10));
     }
 
+    // Camera
     const targetY = Math.max(
       this.camera.position.y,
       this.doodler.position.y + CAMERA.followOffset,
     );
     this.camera.position.y = targetY;
-    this.platformManager.update(targetY + WORLD_HEIGHT * 0.6, this.score, dt);
 
-    const visibleBottom = this.camera.position.y + this.camera.bottom;
-    if (bounds.top < visibleBottom - CAMERA.bottomKillMargin) {
-      this.isGameOver = true;
+    // ── Shoot ────────────────────────────────────────────────
+    if (doShoot) this.shoot(this.doodler.position.x);
+
+    // ── Projectile ───────────────────────────────────────────
+    if (this._projectile) {
+      const proj = this._projectile;
+      proj.prevY = proj.y;
+      proj.y    += PROJECTILE_SPEED * dt;
+      proj.mesh.position.y = proj.y;
+
+      // Platform blocks shot
+      if (this.platformManager.isProjectileBlocked(proj.x, proj.prevY, proj.y)) {
+        this._removeProjectile();
+      }
+
+      // Barrier hit
+      if (this._projectile) {
+        const hitBarrier = this.barrierManager.checkProjectileHit(proj.y, proj.prevY);
+        if (hitBarrier) {
+          this.barrierManager.destroy(hitBarrier);
+          this._removeProjectile();
+        }
+      }
+
+      // Off-screen above
+      const topOfScreen = this.camera.position.y + WORLD_HEIGHT * 0.5 + 2;
+      if (this._projectile && proj.y > topOfScreen) this._removeProjectile();
     }
+
+    // ── Managers ─────────────────────────────────────────────
+    this.platformManager.update(targetY + WORLD_HEIGHT * 0.6, this.score, dt);
+    this.barrierManager.update(this.score, this.camera.position.y, dt);
+
+    // ── Game over ─────────────────────────────────────────────
+    const visibleBottom = this.camera.position.y + this.camera.bottom;
+    if (bounds.top < visibleBottom - CAMERA.bottomKillMargin) this.isGameOver = true;
 
     this.render();
   }
@@ -168,11 +228,13 @@ export class GameWorld {
 
   respawn() {
     this.isGameOver = false;
-    const respawnY = this.camera.position.y + this.camera.bottom + 3;
+    const respawnY  = this.camera.position.y + this.camera.bottom + 3;
     this.doodler.reset(respawnY);
+    this._removeProjectile();
   }
 
   dispose() {
     this.renderer.dispose();
+    this.barrierManager.dispose();
   }
 }

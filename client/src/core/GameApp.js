@@ -182,15 +182,15 @@ export class GameApp {
     if (this.state !== GAME_STATES.PLAYING) return;
     const dt = Math.min(0.033, (timestamp - this.lastTimestamp) / 1000);
     this.lastTimestamp = timestamp;
-    this.gameWorld.update(dt, this.input.getHorizontal());
+    const doShoot = this.input.consumeShoot();
+    this.gameWorld.update(dt, this.input.getHorizontal(), doShoot);
     this.updateScore(this.gameWorld.score);
 
     if (this.gameWorld.heartPickedUp) {
       this.gameWorld.heartPickedUp = false;
-      if (this.lives < MAX_LIVES) {
-        this.lives++;
-        this.updateHearts();
-      }
+      // Overflow: picking up a 6th heart resets to 1
+      this.lives = this.lives >= MAX_LIVES ? 1 : this.lives + 1;
+      this.updateHearts();
     }
 
     if (this.gameWorld.isGameOver) {

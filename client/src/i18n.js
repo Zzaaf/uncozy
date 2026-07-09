@@ -7,7 +7,7 @@ const T = {
     menu_scores:      'РЕКОРДЫ',
     menu_settings:    'НАСТРОЙКИ',
     menu_exit:        'ВЫХОД',
-    menu_hint:        '← A/D → мышь или тач · ESC — пауза',
+    menu_hint:        '← A/D → мышь · ПРОБЕЛ — выстрел · ESC — пауза',
     player_prefix:    '▶',
     player_suffix:    '◀',
 
@@ -69,7 +69,7 @@ const T = {
     menu_scores:      'HIGH SCORES',
     menu_settings:    'SETTINGS',
     menu_exit:        'EXIT',
-    menu_hint:        '← A/D → mouse or touch · ESC — pause',
+    menu_hint:        '← A/D → mouse · SPACE — shoot · ESC — pause',
     player_prefix:    '▶',
     player_suffix:    '◀',
 

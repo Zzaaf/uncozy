@@ -87,6 +87,18 @@ export class PlatformManager {
     return null;
   }
 
+  // Returns true if any platform top is between fromY and toY at the given X
+  isProjectileBlocked(x, fromY, toY) {
+    for (const platform of this.platforms) {
+      const pLeft  = platform.position.x - PLATFORM.width * 0.5;
+      const pRight = platform.position.x + PLATFORM.width * 0.5;
+      if (x < pLeft || x > pRight) continue;
+      const pTop = platform.position.y + PLATFORM.height * 0.5;
+      if (pTop > fromY && pTop <= toY) return true;
+    }
+    return false;
+  }
+
   checkHeartPickup(doodlerBounds) {
     for (const platform of this.platforms) {
       if (!platform.userData.heart || platform.userData.heartCollected) continue;
