@@ -45,6 +45,20 @@ const T = {
 
     lang_ru: 'РУС',
     lang_en: 'ENG',
+
+    auth_loading:      'ЗАГРУЗКА...',
+    auth_login_tab:    'ВХОД',
+    auth_reg_tab:      'РЕГИСТРАЦИЯ',
+    auth_email:        'EMAIL',
+    auth_password:     'ПАРОЛЬ',
+    auth_username:     'НИКНЕЙМ',
+    auth_login_btn:    'ВОЙТИ',
+    auth_reg_btn:      'СОЗДАТЬ',
+    auth_logout:       'ВЫЙТИ ИЗ АККАУНТА',
+    auth_hint_login:   'Нет аккаунта? Перейди на вкладку РЕГИСТРАЦИЯ',
+    auth_hint_reg:     'Уже есть аккаунт? Перейди на вкладку ВХОД',
+    auth_username_hint:'3–20 символов: буквы, цифры, _',
+    auth_pass_hint:    'Минимум 6 символов',
   },
 
   en: {
@@ -93,6 +107,20 @@ const T = {
 
     lang_ru: 'RUS',
     lang_en: 'ENG',
+
+    auth_loading:      'LOADING...',
+    auth_login_tab:    'LOGIN',
+    auth_reg_tab:      'REGISTER',
+    auth_email:        'EMAIL',
+    auth_password:     'PASSWORD',
+    auth_username:     'USERNAME',
+    auth_login_btn:    'SIGN IN',
+    auth_reg_btn:      'CREATE',
+    auth_logout:       'LOG OUT',
+    auth_hint_login:   'No account? Switch to REGISTER tab',
+    auth_hint_reg:     'Have an account? Switch to LOGIN tab',
+    auth_username_hint:'3–20 chars: letters, numbers, _',
+    auth_pass_hint:    'At least 6 characters',
   },
 };
 

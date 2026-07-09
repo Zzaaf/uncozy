@@ -497,6 +497,87 @@ button[data-action="restart"]:hover {
   text-shadow: 0 0 6px var(--px-green);
 }
 
+/* ── Auth screen ─────────────────────────────── */
+.panel--auth {
+  width: min(100%, 360px);
+}
+
+.auth-loading {
+  font-size: 9px;
+  color: var(--px-cyan);
+  text-align: center;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px var(--px-cyan);
+  animation: flicker 2s infinite;
+}
+
+.auth-tabs {
+  display: flex;
+  margin-bottom: 18px;
+  border: 3px solid var(--px-cyan);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 10px 8px;
+  background: var(--px-panel);
+  color: #4a6070;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  letter-spacing: 0.5px;
+  text-align: center;
+  border: none;
+  box-shadow: none;
+  transform: none;
+  text-shadow: none;
+  transition: background 80ms, color 80ms;
+  display: block;
+}
+
+.auth-tab:hover {
+  background: #0a1520;
+  color: var(--px-cyan);
+  box-shadow: none;
+  text-shadow: 0 0 6px var(--px-cyan);
+}
+
+.auth-tab:active {
+  transform: none;
+  box-shadow: none;
+}
+
+.auth-tab.active {
+  background: var(--px-panel2);
+  color: var(--px-cyan);
+  text-shadow: 0 0 8px var(--px-cyan);
+}
+
+.auth-form {
+  text-align: left;
+}
+
+.auth-error {
+  margin: 0 0 14px;
+  padding: 9px 12px;
+  background: rgba(255, 0, 110, 0.12);
+  border: 2px solid var(--px-pink);
+  font-size: 6px;
+  color: var(--px-pink);
+  line-height: 2;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 4px rgba(255, 0, 110, 0.5);
+  word-break: break-word;
+}
+
+.field-hint {
+  margin: -10px 0 14px;
+  font-size: 5px;
+  color: rgba(100, 130, 160, 0.7);
+  letter-spacing: 0.5px;
+  line-height: 2;
+}
+
 /* ── Mobile ──────────────────────────────────── */
 @media (max-width: 600px) {
   #game-shell {

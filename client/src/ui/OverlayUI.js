@@ -151,6 +151,7 @@ export class OverlayUI {
           <div class="actions">
             ${this._btn('save-settings', '💾', 'settings_save', 'submit')}
             ${this._btn('back',          '◀️', 'back')}
+            ${this._btn('logout',        '🚪', 'auth_logout')}
           </div>
         </form>
       </div>
@@ -171,6 +172,105 @@ export class OverlayUI {
       </div>
     `;
     this.bindButtons();
+  }
+
+  showAuthLoading() {
+    this.root.innerHTML = `
+      <div class="panel">
+        <p class="auth-loading">${t('auth_loading')}</p>
+      </div>
+    `;
+  }
+
+  showAuth(activeTab = 'login', errorMsg = '') {
+    this._authTab = activeTab;
+    const isLogin = activeTab === 'login';
+    const error = errorMsg
+      ? `<p class="auth-error">⚠ ${this.escapeHtml(errorMsg)}</p>`
+      : '';
+
+    this.root.innerHTML = `
+      <div class="panel panel--auth">
+        <h1>${t('title').replace('\n', '<br>')}</h1>
+        <p class="panel-subtitle">${t('subtitle')}</p>
+
+        <div class="auth-tabs">
+          <button class="auth-tab ${isLogin ? 'active' : ''}" data-tab="login">${t('auth_login_tab')}</button>
+          <button class="auth-tab ${!isLogin ? 'active' : ''}" data-tab="register">${t('auth_reg_tab')}</button>
+        </div>
+
+        ${error}
+
+        ${isLogin ? `
+          <form id="auth-form" class="auth-form">
+            <label class="field-label">${t('auth_email')}</label>
+            <input class="field-input" type="email" id="auth-email" autocomplete="email" required/>
+
+            <label class="field-label">${t('auth_password')}</label>
+            <input class="field-input" type="password" id="auth-password" autocomplete="current-password" required/>
+
+            <div class="actions">
+              <button type="submit" data-action="login">
+                <span class="btn-icon">🔑</span>
+                <span class="btn-text">${t('auth_login_btn')}</span>
+              </button>
+            </div>
+            <p class="hint">${t('auth_hint_login')}</p>
+          </form>
+        ` : `
+          <form id="auth-form" class="auth-form">
+            <label class="field-label">${t('auth_username')}</label>
+            <input class="field-input" type="text" id="auth-username" maxlength="20" autocomplete="username" required/>
+            <p class="field-hint">${t('auth_username_hint')}</p>
+
+            <label class="field-label">${t('auth_email')}</label>
+            <input class="field-input" type="email" id="auth-email" autocomplete="email" required/>
+
+            <label class="field-label">${t('auth_password')}</label>
+            <input class="field-input" type="password" id="auth-password" autocomplete="new-password" required/>
+            <p class="field-hint">${t('auth_pass_hint')}</p>
+
+            <div class="actions">
+              <button type="submit" data-action="register">
+                <span class="btn-icon">🚀</span>
+                <span class="btn-text">${t('auth_reg_btn')}</span>
+              </button>
+            </div>
+            <p class="hint">${t('auth_hint_reg')}</p>
+          </form>
+        `}
+      </div>
+    `;
+    this._bindAuthTabs();
+    this._bindAuthForm(isLogin);
+  }
+
+  showAuthError(msg) {
+    this.showAuth(this._authTab || 'login', msg);
+  }
+
+  _bindAuthTabs() {
+    this.root.querySelectorAll('.auth-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        this.showAuth(tab.dataset.tab);
+      });
+    });
+  }
+
+  _bindAuthForm(isLogin) {
+    const form = this.root.querySelector('#auth-form');
+    if (!form) return;
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email    = this.root.querySelector('#auth-email')?.value.trim();
+      const password = this.root.querySelector('#auth-password')?.value;
+      if (isLogin) {
+        this.callbacks.login?.(email, password);
+      } else {
+        const username = this.root.querySelector('#auth-username')?.value.trim();
+        this.callbacks.register?.(username, email, password);
+      }
+    });
   }
 
   hide() {

@@ -2,10 +2,12 @@ import { InputController } from '../input/InputController.js';
 import { GameWorld } from '../game/GameWorld.js';
 import { ScoreStore } from '../storage/ScoreStore.js';
 import { OverlayUI } from '../ui/OverlayUI.js';
+import { AuthApi } from '../api/AuthApi.js';
 import { setLang, t } from '../i18n.js';
 import { INITIAL_LIVES, MAX_LIVES } from '../game/constants.js';
 
 const GAME_STATES = {
+  AUTH:      'auth',
   MENU:      'menu',
   PLAYING:   'playing',
   PAUSED:    'paused',
@@ -45,6 +47,9 @@ export class GameApp {
       'save-settings':   (name, skinId, lang) => this.saveSettings(name, skinId, lang),
       back:              () => this._goBack(),
       exit:              () => this.exitGame(),
+      logout:            () => this.logout(),
+      login:             (email, password) => this.login(email, password),
+      register:          (username, email, password) => this.register(username, email, password),
     });
 
     this.loop          = this.loop.bind(this);
@@ -52,15 +57,57 @@ export class GameApp {
     this.handleKeyDown = this.handleKeyDown.bind(this);
   }
 
-  start() {
+  async start() {
     this.input.attach();
     this.updateScoreLabel();
     this.lives = INITIAL_LIVES;
     this.updateHearts();
-    this.showMenu();
     window.addEventListener('resize',  this.handleResize);
     window.addEventListener('keydown', this.handleKeyDown);
     this.gameWorld.render();
+
+    this.ui.showAuthLoading();
+    const user = await AuthApi.me();
+    if (user) {
+      this.playerName = user.username;
+      this.scoreStore.setPlayerName(user.username);
+      this.showMenu();
+    } else {
+      this.showAuth();
+    }
+  }
+
+  showAuth() {
+    this.state = GAME_STATES.AUTH;
+    this.ui.showAuth();
+  }
+
+  async login(email, password) {
+    try {
+      const { user } = await AuthApi.login(email, password);
+      this.playerName = user.username;
+      this.scoreStore.setPlayerName(user.username);
+      this.showMenu();
+    } catch (err) {
+      this.ui.showAuthError(err.message);
+    }
+  }
+
+  async register(username, email, password) {
+    try {
+      const { user } = await AuthApi.register(username, email, password);
+      this.playerName = user.username;
+      this.scoreStore.setPlayerName(user.username);
+      this.showMenu();
+    } catch (err) {
+      this.ui.showAuthError(err.message);
+    }
+  }
+
+  logout() {
+    AuthApi.logout();
+    cancelAnimationFrame(this.rafId);
+    this.showAuth();
   }
 
   handleKeyDown(e) {

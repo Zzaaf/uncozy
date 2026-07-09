@@ -1,5 +1,6 @@
 import './style.css';
 import { GameApp } from './core/GameApp.js';
+import { AuthApi } from './api/AuthApi.js';
 
 document.querySelector('#app').innerHTML = `
   <div id="game-shell">
