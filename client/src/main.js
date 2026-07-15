@@ -7,7 +7,7 @@ document.querySelector('#app').innerHTML = `
   <aside id="legend-panel" class="side-panel side-panel--left" aria-label="How to play">
     <div class="panel-tab" role="button" tabindex="0" title="Открыть — Как играть">
       <span class="panel-tab-icon" aria-hidden="true">📖</span>
-      <span class="panel-tab-text">HOW TO PLAY</span>
+      <span class="panel-tab-text" data-ru="КАК ИГРАТЬ" data-en="HOW TO PLAY">КАК ИГРАТЬ</span>
     </div>
     <div class="panel-body">
       <div id="legend-content"></div>
@@ -16,7 +16,7 @@ document.querySelector('#app').innerHTML = `
   <div id="game-shell">
     <div id="hud">
       <span id="score-label"><span id="score-text">ОЧКИ</span>: <b id="score-value">0</b></span>
-      <span id="level-label"><span id="level-text">УР.</span>&nbsp;<b id="level-value">1</b></span>
+      <span id="level-label"><span id="level-text">УРОВЕНЬ</span>&nbsp;<b id="level-value">1</b></span>
       <div id="hearts"></div>
     </div>
     <div id="game-container"></div>
@@ -26,7 +26,7 @@ document.querySelector('#app').innerHTML = `
   <aside id="leaderboard-panel" class="side-panel side-panel--right" aria-label="Leaderboard">
     <div class="panel-tab" role="button" tabindex="0" title="Открыть — Лидерборд">
       <span class="panel-tab-icon" aria-hidden="true">🏆</span>
-      <span class="panel-tab-text">LEADERBOARD</span>
+      <span class="panel-tab-text" data-ru="ЛИДЕРБОРД" data-en="LEADERBOARD">ЛИДЕРБОРД</span>
     </div>
     <div class="panel-body">
       <div id="leaderboard-content"></div>

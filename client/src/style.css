@@ -393,6 +393,95 @@ body {
   animation: legend-float 1.2s ease-in-out infinite;
 }
 
+/* ── Enemy rows ──────────────────────────────── */
+.lg-enemy-hint {
+  font-size: 7px;
+  color: rgba(255, 120, 50, 0.75);
+  margin-bottom: 8px;
+  line-height: 1.7;
+  letter-spacing: 0.2px;
+}
+
+.lg-enemy-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.06);
+}
+
+.lg-enemy-row:last-child { border-bottom: none; }
+
+.lg-enemy-icon {
+  flex-shrink: 0;
+  width: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lg-enemy-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lg-enemy-name {
+  font-size: 8px;
+  color: var(--px-cyan);
+  letter-spacing: 0.5px;
+}
+
+.lg-enemy-note {
+  font-size: 7px;
+  color: rgba(120, 150, 200, 0.65);
+  line-height: 1.5;
+}
+
+/* ── Level grid ──────────────────────────────── */
+.lg-level-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.lg-level-chip {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.lg-level-num { font-size: 7px; color: #fff; }
+
+.lg-level-chip--1  { background: #020210; border-color: #00e5ff44; }
+.lg-level-chip--2  { background: #06021a; border-color: #00e5ff44; }
+.lg-level-chip--3  { background: #0a0424; border-color: #aa44ff44; }
+.lg-level-chip--4  { background: #0f0220; border-color: #aa44ff44; }
+.lg-level-chip--5  { background: #160118; border-color: #ff006e44; }
+.lg-level-chip--6  { background: #1a0112; border-color: #ff006e44; }
+.lg-level-chip--7  { background: #1e0508; border-color: #ff440044; }
+.lg-level-chip--8  { background: #1f0200; border-color: #ff440044; }
+.lg-level-chip--9  { background: #1a0005; border-color: #ff000044; }
+.lg-level-chip--10 { background: #15001a; border-color: #ff000055; }
+
+.lg-level-note {
+  font-size: 7px;
+  color: rgba(120, 150, 200, 0.55);
+  line-height: 1.7;
+}
+
+.lg-footer-note {
+  font-size: 8px;
+  color: rgba(100, 130, 170, 0.5);
+  margin-top: 6px;
+  line-height: 1.8;
+}
+
 .lg-footer {
   padding: 10px 18px;
   font-size: 8px;

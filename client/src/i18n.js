@@ -38,7 +38,7 @@ const T = {
 
     back:             'НАЗАД',
     score_label:      'ОЧКИ',
-    level_label:      'УР.',
+    level_label:      'УРОВЕНЬ',
 
     skin_0: 'ГЕРОЙ',
     skin_1: 'РОБОТ',
@@ -103,7 +103,7 @@ const T = {
 
     back:             'BACK',
     score_label:      'SCORE',
-    level_label:      'LVL',
+    level_label:      'LEVEL',
 
     skin_0: 'HERO',
     skin_1: 'ROBOT',

@@ -56,6 +56,8 @@ export class LeaderboardUI {
   updateLang() {
     if (this._data) this._renderData(this._data);
     else this._renderSkeleton();
+    const tabText = this.el.closest('aside')?.querySelector('.panel-tab-text');
+    if (tabText) tabText.textContent = getLang() === 'en' ? tabText.dataset.en : tabText.dataset.ru;
   }
 
   // ── Private ──────────────────────────────────

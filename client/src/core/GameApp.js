@@ -73,6 +73,8 @@ export class GameApp {
     window.addEventListener('keydown', this.handleKeyDown);
     this.gameWorld.render();
 
+    this.legendUI?.updateLang();
+    this.leaderboardUI?.updateLang();
     this.ui.showAuthLoading();
     const user = await AuthApi.me();
     if (user) {
@@ -194,6 +196,7 @@ export class GameApp {
     this.state = GAME_STATES.PLAYING;
     this.ui.hide();
     this.updateScore(0);
+    this.updateLevel(1);
     this.lastTimestamp = performance.now();
     cancelAnimationFrame(this.rafId);
     this.rafId = requestAnimationFrame(this.loop);

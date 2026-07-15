@@ -183,9 +183,9 @@ export class EnemyManager {
     // Update shooter bullets
     for (let i = this._bullets.length - 1; i >= 0; i--) {
       const b = this._bullets[i];
-      b.y += BULLET_SPEED * dt;
+      b.y += b.vy * dt;
       b.mesh.position.y = b.y;
-      if (b.y > cameraTop + 4) {
+      if (b.y > cameraTop + 4 || b.y < cameraBottom - 4) {
         this.scene.remove(b.mesh);
         this._bullets.splice(i, 1);
       }
@@ -293,7 +293,9 @@ export class EnemyManager {
         e.shootTimer -= dt;
         if (e.shootTimer <= 0) {
           e.shootTimer = shootCooldown(level);
-          this._fireBullet(e.x, e.mesh.position.y + 0.52);
+          const cy = e.mesh.position.y;
+          this._fireBullet(e.x, cy + 0.52,  BULLET_SPEED);  // up
+          this._fireBullet(e.x, cy - 0.52, -BULLET_SPEED);  // down
         }
         break;
       }
@@ -306,10 +308,10 @@ export class EnemyManager {
     }
   }
 
-  _fireBullet(x, y) {
+  _fireBullet(x, y, vy) {
     const mesh = buildBullet();
     mesh.position.set(x, y, 0.3);
     this.scene.add(mesh);
-    this._bullets.push({ mesh, x, y });
+    this._bullets.push({ mesh, x, y, vy });
   }
 }
