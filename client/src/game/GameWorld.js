@@ -1,8 +1,9 @@
 import * as THREE from 'three';
-import { CAMERA, PLATFORM, WORLD_HEIGHT, WORLD_WIDTH } from './constants.js';
+import { CAMERA, PLATFORM, WORLD_HEIGHT, WORLD_WIDTH, LEVEL_BG_COLORS, getLevelFromScore } from './constants.js';
 import { Doodler } from './entities/Doodler.js';
 import { PlatformManager } from './entities/PlatformManager.js';
 import { BarrierManager } from './entities/BarrierManager.js';
+import { EnemyManager } from './entities/EnemyManager.js';
 
 const PROJECTILE_SPEED = 24;
 const PROJ_W = 0.14;
@@ -12,7 +13,8 @@ export class GameWorld {
   constructor(canvasHost) {
     this.canvasHost = canvasHost;
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x080820);
+    this.scene.background = new THREE.Color(LEVEL_BG_COLORS[0]);
+    this._bgTarget = new THREE.Color(LEVEL_BG_COLORS[0]);
 
     this.camera = new THREE.OrthographicCamera(
       -WORLD_WIDTH / 2,
@@ -35,6 +37,7 @@ export class GameWorld {
 
     this.platformManager = new PlatformManager(this.scene);
     this.barrierManager  = new BarrierManager(this.scene);
+    this.enemyManager    = new EnemyManager(this.scene);
     this.doodler         = new Doodler(this.scene);
 
     // Shared projectile geometry/material (one projectile at a time)
@@ -46,6 +49,8 @@ export class GameWorld {
     this.highestY      = 0;
     this.isGameOver    = false;
     this.heartPickedUp = false;
+    this.levelChanged  = false;
+    this._level        = 1;
     this.resize();
   }
 
@@ -96,14 +101,21 @@ export class GameWorld {
     this.highestY      = 5;
     this.isGameOver    = false;
     this.heartPickedUp = false;
+    this.levelChanged  = false;
+    this._level        = 1;
     this.camera.position.y = WORLD_HEIGHT / 2;
     this.platformManager.reset(0);
     this.barrierManager.reset();
+    this.enemyManager.reset();
     this._removeProjectile();
+    this._bgTarget.set(LEVEL_BG_COLORS[0]);
+    this.scene.background.set(LEVEL_BG_COLORS[0]);
     this.doodler.setSkin(skinId);
     this.doodler.reset(5);
     this.render();
   }
+
+  get level() { return this._level; }
 
   resize() {
     const width  = this.canvasHost.clientWidth  || 1;
@@ -226,6 +238,37 @@ export class GameWorld {
     // ── Managers ─────────────────────────────────────────────
     this.platformManager.update(targetY + WORLD_HEIGHT * 0.6, this.score, dt);
     this.barrierManager.update(this.score, this.camera.position.y, dt);
+
+    const cameraTop = this.camera.position.y + this.camera.top;
+
+    // ── Level & background ────────────────────────────────────
+    const newLevel = getLevelFromScore(this.score);
+    if (newLevel !== this._level) {
+      this._level = newLevel;
+      this.levelChanged = true;
+      this._bgTarget.set(LEVEL_BG_COLORS[newLevel - 1]);
+    }
+    this.scene.background.lerp(this._bgTarget, Math.min(dt * 0.7, 1));
+
+    // ── Enemies ───────────────────────────────────────────────
+    this.enemyManager.update(dt, this.camera.position.y, cameraTop, this._level);
+
+    // Enemy body collision
+    if (this.enemyManager.checkPlayerCollision(bounds, this.doodler.isInvincible)) {
+      this.isGameOver = true;
+    }
+    // Shooter bullet collision
+    if (!this.isGameOver &&
+        this.enemyManager.checkBulletPlayerCollision(bounds, this.doodler.isInvincible)) {
+      this.isGameOver = true;
+    }
+
+    // Enemy hit by player projectile
+    if (this._projectile && this.enemyManager.checkProjectileHit(
+      this._projectile.x, this._projectile.prevY, this._projectile.y,
+    )) {
+      this._removeProjectile();
+    }
 
     // ── Game over ─────────────────────────────────────────────
     const visibleBottom = this.camera.position.y + this.camera.bottom;

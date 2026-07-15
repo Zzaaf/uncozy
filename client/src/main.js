@@ -16,10 +16,12 @@ document.querySelector('#app').innerHTML = `
   <div id="game-shell">
     <div id="hud">
       <span id="score-label"><span id="score-text">ОЧКИ</span>: <b id="score-value">0</b></span>
+      <span id="level-label"><span id="level-text">УР.</span>&nbsp;<b id="level-value">1</b></span>
       <div id="hearts"></div>
     </div>
     <div id="game-container"></div>
     <div id="overlay"></div>
+    <div id="level-up-banner" aria-live="assertive"></div>
   </div>
   <aside id="leaderboard-panel" class="side-panel side-panel--right" aria-label="Leaderboard">
     <div class="panel-tab" role="button" tabindex="0" title="Открыть — Лидерборд">
@@ -105,10 +107,13 @@ const leaderboardUI = new LeaderboardUI(lboardContent, {
 });
 
 const app = new GameApp({
-  gameContainer:     document.querySelector('#game-container'),
-  overlayRoot:       document.querySelector('#overlay'),
-  scoreValueElement: document.querySelector('#score-value'),
-  scoreLabelElement: document.querySelector('#score-text'),
+  gameContainer:      document.querySelector('#game-container'),
+  overlayRoot:        document.querySelector('#overlay'),
+  scoreValueElement:  document.querySelector('#score-value'),
+  scoreLabelElement:  document.querySelector('#score-text'),
+  levelValueElement:  document.querySelector('#level-value'),
+  levelLabelElement:  document.querySelector('#level-text'),
+  levelBannerElement: document.querySelector('#level-up-banner'),
   legendUI,
   leaderboardUI,
 });

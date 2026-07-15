@@ -656,6 +656,54 @@ body {
   text-shadow: 0 0 8px var(--px-yellow);
 }
 
+/* ── Level HUD ───────────────────────────────── */
+#level-label {
+  background: rgba(5, 5, 20, 0.9);
+  border: 3px solid var(--px-cyan);
+  box-shadow:
+    2px  0 0 var(--px-cyan),
+    -2px 0 0 var(--px-cyan),
+    0  2px 0 var(--px-cyan),
+    0 -2px 0 var(--px-cyan),
+    0 0 14px rgba(0, 229, 255, 0.45);
+  padding: 7px 12px;
+  font-size: 9px;
+  color: var(--px-cyan);
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px var(--px-cyan);
+}
+
+/* ── Level-up banner ─────────────────────────── */
+#level-up-banner {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(14px, 2.8vw, 22px);
+  color: var(--px-cyan);
+  text-shadow:
+    0 0 12px var(--px-cyan),
+    0 0 28px var(--px-cyan),
+    0 0 2px #fff;
+  pointer-events: none;
+  z-index: 9;
+  white-space: nowrap;
+  opacity: 0;
+}
+
+#level-up-banner.level-up-anim {
+  animation: levelUpPop 2.4s ease-out forwards;
+}
+
+@keyframes levelUpPop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  12%  { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
+  25%  { opacity: 1; transform: translate(-50%, -50%) scale(1.00); }
+  72%  { opacity: 1; transform: translate(-50%, -50%) scale(1.00); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.88); }
+}
+
 /* ── Hearts HUD ──────────────────────────────── */
 #hearts {
   display: flex;

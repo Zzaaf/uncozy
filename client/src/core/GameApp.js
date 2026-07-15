@@ -17,12 +17,16 @@ const GAME_STATES = {
 };
 
 export class GameApp {
-  constructor({ gameContainer, overlayRoot, scoreValueElement, scoreLabelElement, legendUI, leaderboardUI }) {
-    this.gameContainer     = gameContainer;
-    this.scoreValueElement = scoreValueElement;
-    this.scoreLabelElement = scoreLabelElement;
-    this.legendUI          = legendUI;
-    this.leaderboardUI     = leaderboardUI;
+  constructor({ gameContainer, overlayRoot, scoreValueElement, scoreLabelElement,
+                levelValueElement, levelLabelElement, levelBannerElement, legendUI, leaderboardUI }) {
+    this.gameContainer      = gameContainer;
+    this.scoreValueElement  = scoreValueElement;
+    this.scoreLabelElement  = scoreLabelElement;
+    this.levelValueElement  = levelValueElement;
+    this.levelLabelElement  = levelLabelElement;
+    this.levelBannerElement = levelBannerElement;
+    this.legendUI           = legendUI;
+    this.leaderboardUI      = leaderboardUI;
 
     this.scoreStore = new ScoreStore();
     this.playerName = this.scoreStore.getPlayerName();
@@ -62,6 +66,7 @@ export class GameApp {
   async start() {
     this.input.attach();
     this.updateScoreLabel();
+    this.updateLevelLabel();
     this.lives = INITIAL_LIVES;
     this.updateHearts();
     window.addEventListener('resize',  this.handleResize);
@@ -175,6 +180,7 @@ export class GameApp {
     this.lang   = this.scoreStore.setLang(nextLang);
     setLang(nextLang);
     this.updateScoreLabel();
+    this.updateLevelLabel();
     this.legendUI?.updateLang();
     this.leaderboardUI?.updateLang();
     this._goBack();
@@ -216,6 +222,13 @@ export class GameApp {
     this.gameWorld.update(dt, this.input.getHorizontal(), doShoot);
     this.updateScore(this.gameWorld.score);
     this.leaderboardUI?.setLiveScore(this.gameWorld.score, true);
+
+    if (this.gameWorld.levelChanged) {
+      this.gameWorld.levelChanged = false;
+      const lv = this.gameWorld.level;
+      this.updateLevel(lv);
+      this.showLevelUp(lv);
+    }
 
     if (this.gameWorld.heartPickedUp) {
       this.gameWorld.heartPickedUp = false;
@@ -281,9 +294,25 @@ export class GameApp {
   }
 
   updateScoreLabel() {
-    if (this.scoreLabelElement) {
-      this.scoreLabelElement.textContent = t('score_label');
-    }
+    if (this.scoreLabelElement) this.scoreLabelElement.textContent = t('score_label');
+  }
+
+  updateLevelLabel() {
+    if (this.levelLabelElement) this.levelLabelElement.textContent = t('level_label');
+  }
+
+  updateLevel(level) {
+    if (this.levelValueElement) this.levelValueElement.textContent = String(level);
+  }
+
+  showLevelUp(level) {
+    const el = this.levelBannerElement;
+    if (!el) return;
+    const ru = this.lang !== 'en';
+    el.textContent = `${ru ? 'УРОВЕНЬ' : 'LEVEL'} ${level}!`;
+    el.classList.remove('level-up-anim');
+    void el.offsetWidth; // reflow to restart animation
+    el.classList.add('level-up-anim');
   }
 
   setPanelZoom(factor) {

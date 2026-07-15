@@ -118,6 +118,8 @@ export class Doodler {
     this.velocity.y = DOODLER.jumpVelocity * SUPER_JUMP_MULTIPLIER;
   }
 
+  get isInvincible() { return (this._blinkTimer ?? 0) > 0; }
+
   getBottom() {
     return this.position.y - this.size.height * 0.5;
   }
