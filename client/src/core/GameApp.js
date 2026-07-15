@@ -286,6 +286,10 @@ export class GameApp {
     }
   }
 
+  setPanelZoom(factor) {
+    this.gameWorld.setZoom(factor);
+  }
+
   handleResize() {
     this.gameWorld.resize();
   }

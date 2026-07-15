@@ -131,18 +131,27 @@ function platRow(svgHtml, descRu, descEn, extra = '') {
 }
 
 export class LegendUI {
-  constructor(el) {
+  constructor(el, { onClose } = {}) {
     this.el = el;
+    this._onClose = onClose;
     this._render();
   }
 
   _render() {
     const lang = getLang();
+    const closeBtn = this._onClose
+      ? `<button class="panel-close-btn panel-close-btn--left" title="Скрыть" aria-label="Скрыть панель">
+           <svg viewBox="0 0 7 12" width="7" height="12" fill="currentColor" aria-hidden="true">
+             <polygon points="7,0 0,6 7,12"/>
+           </svg>
+         </button>`
+      : '';
     this.el.innerHTML = `
       <div class="side-panel-inner">
         <div class="side-panel-header">
           <span class="side-panel-badge">📖</span>
           <span class="side-panel-title" data-ru="КАК ИГРАТЬ" data-en="HOW TO PLAY">КАК ИГРАТЬ</span>
+          ${closeBtn}
         </div>
 
         ${section('УПРАВЛЕНИЕ', 'CONTROLS', `

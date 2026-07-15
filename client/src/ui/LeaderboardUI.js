@@ -5,13 +5,29 @@ const POLL_INTERVAL = 12_000;
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 export class LeaderboardUI {
-  constructor(el) {
+  constructor(el, { onClose } = {}) {
     this.el = el;
+    this._onClose   = onClose;
     this._pollId    = null;
     this._data      = null;
     this._liveScore = 0;
     this._liveActive = false;
     this._renderSkeleton();
+  }
+
+  _closeBtnHtml() {
+    if (!this._onClose) return '';
+    return `<button class="panel-close-btn panel-close-btn--right" title="Скрыть" aria-label="Скрыть панель">
+      <svg viewBox="0 0 7 12" width="7" height="12" fill="currentColor" aria-hidden="true">
+        <polygon points="0,0 7,6 0,12"/>
+      </svg>
+    </button>`;
+  }
+
+  _attachClose() {
+    if (!this._onClose) return;
+    const btn = this.el.querySelector('.panel-close-btn');
+    if (btn) btn.addEventListener('click', this._onClose);
   }
 
   start() {
@@ -155,10 +171,12 @@ export class LeaderboardUI {
         <div class="side-panel-header">
           <span class="side-panel-badge">🏆</span>
           <span class="side-panel-title">${ru ? 'ЛИДЕРЫ' : 'LEADERBOARD'}</span>
+          ${this._closeBtnHtml()}
         </div>
         <div class="lb-empty">${ru ? 'ЗАГРУЗКА...' : 'LOADING...'}</div>
       </div>
     `;
+    this._attachClose();
   }
 
   _renderData({ entries, myEntry }) {
@@ -200,6 +218,7 @@ export class LeaderboardUI {
         <div class="side-panel-header">
           <span class="side-panel-badge">🏆</span>
           <span class="side-panel-title">${ru ? 'ЛИДЕРЫ' : 'LEADERBOARD'}</span>
+          ${this._closeBtnHtml()}
         </div>
 
         <div class="lb-header-row">
@@ -221,6 +240,7 @@ export class LeaderboardUI {
         </div>
       </div>
     `;
+    this._attachClose();
   }
 }
 

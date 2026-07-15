@@ -109,7 +109,9 @@ export class GameWorld {
     const width  = this.canvasHost.clientWidth  || 1;
     const height = this.canvasHost.clientHeight || 1;
     const aspect = width / height;
-    const baseHeight = WORLD_HEIGHT;
+    const zoom   = this._zoom || 1;
+    // Zoom shrinks the frustum → character appears larger
+    const baseHeight = WORLD_HEIGHT / zoom;
     const baseWidth  = baseHeight * aspect;
 
     this.camera.left   = -baseWidth / 2;
@@ -118,6 +120,11 @@ export class GameWorld {
     this.camera.bottom = -baseHeight / 2;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
+  }
+
+  setZoom(factor) {
+    this._zoom = Math.max(1, factor);
+    this.resize();
   }
 
   shoot(x) {
