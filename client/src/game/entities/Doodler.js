@@ -84,6 +84,9 @@ export class Doodler {
   reset(positionY) {
     this.position.set(0, positionY, 0);
     this.velocity.set(0, DOODLER.jumpVelocity, 0);
+    this._blinkTimer = 2.0;   // seconds of post-respawn blinking
+    this._blinkPhase = 0;
+    this.mesh.visible = true;
     this.syncMesh();
   }
 
@@ -96,6 +99,13 @@ export class Doodler {
     const horizontalLimit = WORLD_WIDTH * 0.5;
     if (this.position.x < -horizontalLimit) this.position.x = horizontalLimit;
     if (this.position.x > horizontalLimit)  this.position.x = -horizontalLimit;
+
+    if (this._blinkTimer > 0) {
+      this._blinkTimer -= dt;
+      this._blinkPhase += dt;
+      this.mesh.visible = Math.floor(this._blinkPhase / 0.08) % 2 === 0;
+      if (this._blinkTimer <= 0) this.mesh.visible = true;
+    }
 
     this.syncMesh();
   }
