@@ -260,7 +260,21 @@ export class GameApp {
     const saved = this.scoreStore.saveScore(score, this.playerName);
     if (!saved.length) this.scoreStore.saveScore(0, this.playerName);
     AuthApi.submitScore(score);
-    this.ui.showGameOver(score);
+    this._showGameOverBanner(() => this.ui.showGameOver(score));
+  }
+
+  _showGameOverBanner(onDone) {
+    const el = this.levelBannerElement;
+    if (!el) { onDone(); return; }
+    const ru = this.lang !== 'en';
+    el.textContent = ru ? 'ИГРА ОКОНЧЕНА!' : 'GAME OVER!';
+    el.classList.remove('level-up-anim', 'game-over-anim');
+    void el.offsetWidth;
+    el.classList.add('game-over-anim');
+    setTimeout(() => {
+      el.classList.remove('game-over-anim');
+      onDone();
+    }, 5000);
   }
 
   exitGame() {

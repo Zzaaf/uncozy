@@ -181,7 +181,7 @@ export class GameWorld {
 
     // Barrier blocks player from below (bounce back)
     if (this.doodler.velocity.y > 0) {
-      const barrier = this.barrierManager.checkPlayerCollision(bounds.top, previousTop);
+      const barrier = this.barrierManager.checkPlayerCollision(bounds, previousTop);
       if (barrier) {
         this.doodler.velocity.y = -this.doodler.velocity.y * 0.25;
         this.doodler.position.y = barrier.y - 0.5 - this.doodler.size.height * 0.5;
@@ -223,9 +223,9 @@ export class GameWorld {
 
       // Barrier hit
       if (this._projectile) {
-        const hitBarrier = this.barrierManager.checkProjectileHit(proj.y, proj.prevY);
+        const hitBarrier = this.barrierManager.checkProjectileHit(proj.x, proj.y, proj.prevY);
         if (hitBarrier) {
-          this.barrierManager.destroy(hitBarrier);
+          this.barrierManager.hitBarrier(hitBarrier);
           this._removeProjectile();
         }
       }
@@ -237,7 +237,12 @@ export class GameWorld {
 
     // ── Managers ─────────────────────────────────────────────
     this.platformManager.update(targetY + WORLD_HEIGHT * 0.6, this.score, dt);
-    this.barrierManager.update(this.score, this.camera.position.y, dt);
+    this.barrierManager.update(dt, this.camera.position.y, this._level, this.doodler.position.y);
+
+    // Explosive barrier detonation damage
+    if (this.barrierManager.playerHitByExplosion && !this.doodler.isInvincible) {
+      this.isGameOver = true;
+    }
 
     const cameraTop = this.camera.position.y + this.camera.top;
 

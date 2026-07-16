@@ -89,24 +89,32 @@ function buildBullet() {
 
 // ── Spawn config ──────────────────────────────────────────────────────────────
 
-// Frontier spawns only crawlers & shooters; flyers/droppers use timers
+// Minimum level required before each enemy type can spawn
+const UNLOCK_LEVEL = { crawler: 2, flyer: 3, shooter: 5, dropper: 7 };
+
+// Frontier (Y-axis) spawns crawlers first, shooters join at level 5+
+// Weights: [crawler, shooter]
 const FRONTIER_WEIGHTS = [
-  [7, 3], [7, 3], [6, 4], [6, 4], [5, 5],
-  [4, 6], [3, 7], [3, 7], [2, 8], [2, 8],
+  [0, 0], [10, 0], [10, 0], [10, 0], [8, 2],
+  [6, 4], [5, 5],  [4, 6],  [3, 7],  [2, 8],
 ];
 
 function pickFrontierType(level) {
   const [wc, ws] = FRONTIER_WEIGHTS[Math.min(level - 1, 9)];
-  return Math.random() * (wc + ws) < wc ? 'crawler' : 'shooter';
+  const total = wc + ws;
+  if (total === 0) return null;
+  return Math.random() * total < wc ? 'crawler' : 'shooter';
 }
 
-const spawnInterval  = l => Math.max(7,   15  - l * 0.80);
-const crawlerSpeed   = l => 1.8 + l * 0.35;
-const flyerSpeed     = l => 2.5 + l * 0.40;
-const dropperSpeed   = l => 4.0 + l * 0.55;
-const shootCooldown  = l => Math.max(1.5,  4.0 - l * 0.25);
-const flyerCooldown  = l => Math.max(3.0,  8.0 - l * 0.50);
-const dropperCooldown = l => Math.max(3.5, 10.0 - l * 0.65);
+// Frontier spawn gap: very sparse at low levels, tightens by level 10
+const spawnInterval   = l => Math.max(6,   24 - l * 1.8);
+const crawlerSpeed    = l => 1.4 + l * 0.28;
+const flyerSpeed      = l => 2.2 + l * 0.35;
+const dropperSpeed    = l => 3.5 + l * 0.45;
+const shootCooldown   = l => Math.max(1.8,  5.0 - l * 0.32);
+// Flyers and droppers get a grace cooldown after unlock, then tighten
+const flyerCooldown   = l => Math.max(4.0, 12.0 - (l - 3) * 0.9);
+const dropperCooldown = l => Math.max(4.5, 14.0 - (l - 7) * 1.2);
 
 const BULLET_SPEED = 9;
 
@@ -128,9 +136,10 @@ export class EnemyManager {
     this._bullets.forEach(b => this.scene.remove(b.mesh));
     this.enemies  = [];
     this._bullets = [];
-    this._spawnFrontier = 30;
-    this._flyerTimer    = 4;
-    this._dropperTimer  = 7;
+    this._spawnFrontier  = 30;
+    // Timers start large so each type gets a grace period after unlock
+    this._flyerTimer    = 10;
+    this._dropperTimer  = 12;
     this._time = 0;
   }
 
@@ -139,35 +148,51 @@ export class EnemyManager {
     const cameraHalfH  = cameraTop - cameraY;
     const cameraBottom = cameraY - cameraHalfH;
 
-    // Advance Y-frontier (crawlers & shooters)
-    while (this._spawnFrontier < cameraTop + 6) {
-      const x    = (Math.random() - 0.5) * WORLD_WIDTH * 0.75;
-      const type = pickFrontierType(level);
-      this._spawnEnemy(type, x, this._spawnFrontier, level);
-      this._spawnFrontier += spawnInterval(level);
+    // Advance Y-frontier (crawlers & shooters) — gated to level 2+
+    if (level >= UNLOCK_LEVEL.crawler) {
+      while (this._spawnFrontier < cameraTop + 6) {
+        const x    = (Math.random() - 0.5) * WORLD_WIDTH * 0.75;
+        const type = pickFrontierType(level);
+        if (type) this._spawnEnemy(type, x, this._spawnFrontier, level);
+        this._spawnFrontier += spawnInterval(level);
+      }
+    } else {
+      // Keep frontier ahead of camera so crawlers appear promptly at level 2
+      if (this._spawnFrontier < cameraTop + 6) {
+        this._spawnFrontier = cameraTop + spawnInterval(2);
+      }
     }
 
-    // Flyer timer
-    this._flyerTimer -= dt;
-    if (this._flyerTimer <= 0) {
-      const spawnY  = cameraY + (Math.random() * 0.5 + 0.1) * cameraHalfH;
-      const goRight = Math.random() < 0.5;
-      this._spawnEnemy(
-        'flyer',
-        goRight ? -HALF_W - 1.5 : HALF_W + 1.5,
-        spawnY,
-        level,
-        (goRight ? 1 : -1) * flyerSpeed(level),
-      );
-      this._flyerTimer = flyerCooldown(level) + Math.random() * 2;
+    // Flyer timer — only active from level 3+
+    if (level >= UNLOCK_LEVEL.flyer) {
+      this._flyerTimer -= dt;
+      if (this._flyerTimer <= 0) {
+        const spawnY  = cameraY + (Math.random() * 0.5 + 0.1) * cameraHalfH;
+        const goRight = Math.random() < 0.5;
+        this._spawnEnemy(
+          'flyer',
+          goRight ? -HALF_W - 1.5 : HALF_W + 1.5,
+          spawnY,
+          level,
+          (goRight ? 1 : -1) * flyerSpeed(level),
+        );
+        this._flyerTimer = flyerCooldown(level) + Math.random() * 2.5;
+      }
+    } else {
+      // Reset grace timer each time so first flyer waits ~10s after unlock
+      this._flyerTimer = 10;
     }
 
-    // Dropper timer
-    this._dropperTimer -= dt;
-    if (this._dropperTimer <= 0) {
-      const x = (Math.random() - 0.5) * WORLD_WIDTH * 0.72;
-      this._spawnEnemy('dropper', x, cameraTop + 1, level);
-      this._dropperTimer = dropperCooldown(level) + Math.random() * 3;
+    // Dropper timer — only active from level 7+
+    if (level >= UNLOCK_LEVEL.dropper) {
+      this._dropperTimer -= dt;
+      if (this._dropperTimer <= 0) {
+        const x = (Math.random() - 0.5) * WORLD_WIDTH * 0.72;
+        this._spawnEnemy('dropper', x, cameraTop + 1, level);
+        this._dropperTimer = dropperCooldown(level) + Math.random() * 3;
+      }
+    } else {
+      this._dropperTimer = 12;
     }
 
     // Update enemies

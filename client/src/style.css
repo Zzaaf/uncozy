@@ -16,16 +16,42 @@ html {
   --px-panel2: #12122e;
 }
 
-/* ── Custom pixel cursor ─────────────────────── */
+/* ── Custom pixel cursors ─────────────────────── */
+/*
+  Three states:
+  --cur-default : cyan arrow  — normal navigation
+  --cur-pointer : yellow arrow — hovering a clickable element
+  --cur-active  : white compact arrow — mid-click
+  Arrow shape: pixel art pointer, tip at (0,0), hotspot 0 0.
+  Each logical pixel = 2×2 px; dark shadow offset (+1,+1) for readability.
+*/
 :root {
-  --cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect x='15' y='1' width='2' height='11' fill='%2300ff88'/%3E%3Crect x='15' y='20' width='2' height='11' fill='%2300ff88'/%3E%3Crect x='1' y='15' width='11' height='2' fill='%2300ff88'/%3E%3Crect x='20' y='15' width='11' height='2' fill='%2300ff88'/%3E%3Crect x='13' y='13' width='6' height='6' fill='%2300ff88' opacity='0.35'/%3E%3Crect x='15' y='15' width='2' height='2' fill='%2300ff88'/%3E%3C/svg%3E") 16 16, crosshair;
+  /* DEFAULT — cyan #00e5ff */
+  --cur-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='30'%3E%3Crect x='1' y='1' width='2' height='2' fill='%23001a28'/%3E%3Crect x='1' y='3' width='4' height='2' fill='%23001a28'/%3E%3Crect x='1' y='5' width='6' height='2' fill='%23001a28'/%3E%3Crect x='1' y='7' width='8' height='2' fill='%23001a28'/%3E%3Crect x='1' y='9' width='10' height='2' fill='%23001a28'/%3E%3Crect x='1' y='11' width='12' height='2' fill='%23001a28'/%3E%3Crect x='1' y='13' width='14' height='2' fill='%23001a28'/%3E%3Crect x='1' y='15' width='16' height='2' fill='%23001a28'/%3E%3Crect x='1' y='17' width='18' height='2' fill='%23001a28'/%3E%3Crect x='1' y='19' width='12' height='2' fill='%23001a28'/%3E%3Crect x='1' y='21' width='6' height='2' fill='%23001a28'/%3E%3Crect x='9' y='21' width='4' height='2' fill='%23001a28'/%3E%3Crect x='1' y='23' width='4' height='2' fill='%23001a28'/%3E%3Crect x='11' y='23' width='4' height='2' fill='%23001a28'/%3E%3Crect x='1' y='25' width='2' height='2' fill='%23001a28'/%3E%3Crect x='13' y='25' width='2' height='2' fill='%23001a28'/%3E%3Crect x='15' y='27' width='2' height='2' fill='%23001a28'/%3E%3Crect x='0' y='0' width='2' height='2' fill='%2300e5ff'/%3E%3Crect x='0' y='2' width='4' height='2' fill='%2300e5ff'/%3E%3Crect x='0' y='4' width='6' height='2' fill='%2300e5ff'/%3E%3Crect x='0' y='6' width='8' height='2' fill='%2300e5ff'/%3E%3Crect x='0' y='8' width='10' height='2' fill='%2300e5ff'/%3E%3Crect x='0' y='10' width='12' height='2' fill='%2300e5ff'/%3E%3Crect x='0' y='12' width='14' height='2' fill='%2300e5ff'/%3E%3Crect x='0' y='14' width='16' height='2' fill='%2300e5ff'/%3E%3Crect x='0' y='16' width='18' height='2' fill='%2300e5ff'/%3E%3Crect x='0' y='18' width='12' height='2' fill='%2300e5ff'/%3E%3Crect x='0' y='20' width='6' height='2' fill='%2300e5ff'/%3E%3Crect x='8' y='20' width='4' height='2' fill='%2300e5ff'/%3E%3Crect x='0' y='22' width='4' height='2' fill='%2300e5ff'/%3E%3Crect x='10' y='22' width='4' height='2' fill='%2300e5ff'/%3E%3Crect x='0' y='24' width='2' height='2' fill='%2300e5ff'/%3E%3Crect x='12' y='24' width='2' height='2' fill='%2300e5ff'/%3E%3Crect x='14' y='26' width='2' height='2' fill='%2300e5ff'/%3E%3C/svg%3E") 0 0, default;
+
+  /* POINTER — yellow #ffdd00 (signals "you can click here") */
+  --cur-pointer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='30'%3E%3Crect x='1' y='1' width='2' height='2' fill='%23001a28'/%3E%3Crect x='1' y='3' width='4' height='2' fill='%23001a28'/%3E%3Crect x='1' y='5' width='6' height='2' fill='%23001a28'/%3E%3Crect x='1' y='7' width='8' height='2' fill='%23001a28'/%3E%3Crect x='1' y='9' width='10' height='2' fill='%23001a28'/%3E%3Crect x='1' y='11' width='12' height='2' fill='%23001a28'/%3E%3Crect x='1' y='13' width='14' height='2' fill='%23001a28'/%3E%3Crect x='1' y='15' width='16' height='2' fill='%23001a28'/%3E%3Crect x='1' y='17' width='18' height='2' fill='%23001a28'/%3E%3Crect x='1' y='19' width='12' height='2' fill='%23001a28'/%3E%3Crect x='1' y='21' width='6' height='2' fill='%23001a28'/%3E%3Crect x='9' y='21' width='4' height='2' fill='%23001a28'/%3E%3Crect x='1' y='23' width='4' height='2' fill='%23001a28'/%3E%3Crect x='11' y='23' width='4' height='2' fill='%23001a28'/%3E%3Crect x='1' y='25' width='2' height='2' fill='%23001a28'/%3E%3Crect x='13' y='25' width='2' height='2' fill='%23001a28'/%3E%3Crect x='15' y='27' width='2' height='2' fill='%23001a28'/%3E%3Crect x='0' y='0' width='2' height='2' fill='%23ffdd00'/%3E%3Crect x='0' y='2' width='4' height='2' fill='%23ffdd00'/%3E%3Crect x='0' y='4' width='6' height='2' fill='%23ffdd00'/%3E%3Crect x='0' y='6' width='8' height='2' fill='%23ffdd00'/%3E%3Crect x='0' y='8' width='10' height='2' fill='%23ffdd00'/%3E%3Crect x='0' y='10' width='12' height='2' fill='%23ffdd00'/%3E%3Crect x='0' y='12' width='14' height='2' fill='%23ffdd00'/%3E%3Crect x='0' y='14' width='16' height='2' fill='%23ffdd00'/%3E%3Crect x='0' y='16' width='18' height='2' fill='%23ffdd00'/%3E%3Crect x='0' y='18' width='12' height='2' fill='%23ffdd00'/%3E%3Crect x='0' y='20' width='6' height='2' fill='%23ffdd00'/%3E%3Crect x='8' y='20' width='4' height='2' fill='%23ffdd00'/%3E%3Crect x='0' y='22' width='4' height='2' fill='%23ffdd00'/%3E%3Crect x='10' y='22' width='4' height='2' fill='%23ffdd00'/%3E%3Crect x='0' y='24' width='2' height='2' fill='%23ffdd00'/%3E%3Crect x='12' y='24' width='2' height='2' fill='%23ffdd00'/%3E%3Crect x='14' y='26' width='2' height='2' fill='%23ffdd00'/%3E%3C/svg%3E") 0 0, pointer;
+
+  /* ACTIVE — white compact arrowhead only (signals "clicking!") */
+  --cur-active: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Crect x='1' y='1' width='2' height='2' fill='%23001a28'/%3E%3Crect x='1' y='3' width='4' height='2' fill='%23001a28'/%3E%3Crect x='1' y='5' width='6' height='2' fill='%23001a28'/%3E%3Crect x='1' y='7' width='8' height='2' fill='%23001a28'/%3E%3Crect x='1' y='9' width='10' height='2' fill='%23001a28'/%3E%3Crect x='1' y='11' width='12' height='2' fill='%23001a28'/%3E%3Crect x='1' y='13' width='14' height='2' fill='%23001a28'/%3E%3Crect x='1' y='15' width='16' height='2' fill='%23001a28'/%3E%3Crect x='0' y='0' width='2' height='2' fill='%23ffffff'/%3E%3Crect x='0' y='2' width='4' height='2' fill='%23ffffff'/%3E%3Crect x='0' y='4' width='6' height='2' fill='%23ffffff'/%3E%3Crect x='0' y='6' width='8' height='2' fill='%23ffffff'/%3E%3Crect x='0' y='8' width='10' height='2' fill='%23ffffff'/%3E%3Crect x='0' y='10' width='12' height='2' fill='%23ffffff'/%3E%3Crect x='0' y='12' width='14' height='2' fill='%23ffffff'/%3E%3Crect x='0' y='14' width='16' height='2' fill='%23ffffff'/%3E%3C/svg%3E") 0 0, pointer;
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  cursor: var(--cursor);
+  cursor: var(--cur-default);
+}
+
+/* Clickable elements → yellow pointer */
+button, a, [role=button], .panel-tab, select,
+label[for], input[type=checkbox], input[type=radio] {
+  cursor: var(--cur-pointer);
+}
+
+/* Mid-click → white compact arrow */
+button:active, a:active, [role=button]:active, .panel-tab:active {
+  cursor: var(--cur-active);
 }
 
 body {
@@ -69,7 +95,7 @@ body {
   justify-content: center;
   gap: 18px;
   height: 100%;
-  cursor: pointer;
+  cursor: var(--cur-pointer);
   user-select: none;
   background: var(--px-panel);
   border: 1px solid rgba(0, 229, 255, 0.12);
@@ -141,7 +167,7 @@ body {
   box-shadow: none;
   transform: none;
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
-  cursor: pointer;
+  cursor: var(--cur-pointer);
 }
 
 .panel-close-btn:hover {
@@ -785,11 +811,28 @@ body {
   animation: levelUpPop 2.4s ease-out forwards;
 }
 
+#level-up-banner.game-over-anim {
+  color: #ff1a1a;
+  text-shadow:
+    0 0 12px #ff1a1a,
+    0 0 28px #ff0000,
+    0 0 2px #fff;
+  animation: gameOverPop 5s ease-out forwards;
+}
+
 @keyframes levelUpPop {
   0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
   12%  { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
   25%  { opacity: 1; transform: translate(-50%, -50%) scale(1.00); }
   72%  { opacity: 1; transform: translate(-50%, -50%) scale(1.00); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.88); }
+}
+
+@keyframes gameOverPop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  8%   { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
+  16%  { opacity: 1; transform: translate(-50%, -50%) scale(1.00); }
+  84%  { opacity: 1; transform: translate(-50%, -50%) scale(1.00); }
   100% { opacity: 0; transform: translate(-50%, -50%) scale(0.88); }
 }
 
@@ -834,18 +877,6 @@ body {
     inset 0 0 30px rgba(0, 0, 50, 0.5);
 }
 
-.panel::before {
-  content: '◆ PIXEL JUMP ◆';
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 6px;
-  color: var(--px-cyan);
-  white-space: nowrap;
-  letter-spacing: 3px;
-  text-shadow: 0 0 8px var(--px-cyan);
-}
 
 /* decorative corner pixels */
 .panel::after {
@@ -915,7 +946,7 @@ button {
   color: var(--px-green);
   border: 3px solid var(--px-green);
   padding: 13px 16px;
-  cursor: pointer;
+  cursor: var(--cur-pointer);
   font-family: 'Press Start 2P', monospace;
   font-size: 9px;
   letter-spacing: 0.5px;
@@ -965,6 +996,18 @@ button:active {
     0 2px 0 rgba(0, 0, 0, 0.6);
 }
 
+/* ── Danger button (logout) ──────────────────── */
+.btn--danger:hover {
+  background: #1a0505;
+  color: #ff3333;
+  border-color: #ff3333;
+  box-shadow:
+    0 5px 0 #550000,
+    0 7px 0 rgba(0, 0, 0, 0.6),
+    0 0 22px rgba(255, 51, 51, 0.55);
+  text-shadow: 0 0 12px #ff3333, 0 0 24px rgba(255, 51, 51, 0.35);
+}
+
 /* Start / Restart — yellow accent */
 button[data-action="start"],
 button[data-action="restart"] {
@@ -999,7 +1042,7 @@ button[data-action="restart"]:hover {
 /* ── Result ──────────────────────────────────── */
 .result {
   margin: 4px 0 18px;
-  font-size: 7px;
+  font-size: 10px;
   color: #aabbdd;
   line-height: 2;
 }

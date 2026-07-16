@@ -79,14 +79,28 @@ function platFloat() {
   </svg>`;
 }
 
-function platBarrier() {
-  const W = 10, GAP = 3;
-  const colors = Array(6).fill('#ff2244');
-  const total = colors.length * (W + GAP) - GAP;
-  return `<svg viewBox="-1 -1 ${total + 2} 12" width="${total}" height="10" xmlns="http://www.w3.org/2000/svg">
-    <rect x="-1" y="-1" width="${total + 2}" height="12" fill="rgba(255,34,68,0.15)" rx="1"/>
-    ${cubeRow(colors)}
+function barrierSvg(cubeColors, glowColor, gapIndices = []) {
+  const W = 8, GAP = 2, N = 8;
+  const total = N * (W + GAP) - GAP;
+  const cubes = Array.from({ length: N }, (_, i) => {
+    if (gapIndices.includes(i)) return '';
+    const x = i * (W + GAP);
+    return `<rect x="${x}" y="0" width="${W}" height="${W}" fill="${cubeColors}" rx="1"/>`;
+  }).join('');
+  return `<svg viewBox="-1 -1 ${total + 2} ${W + 2}" width="${total}" height="${W}" xmlns="http://www.w3.org/2000/svg">
+    <rect x="-1" y="-1" width="${total + 2}" height="${W + 2}" fill="${glowColor}" rx="1" opacity="0.18"/>
+    ${cubes}
   </svg>`;
+}
+
+function barrierRow(svgHtml, nameRu, nameEn, descRu, descEn) {
+  return `<div class="lg-enemy-row">
+    <div class="lg-enemy-icon">${svgHtml}</div>
+    <div class="lg-enemy-desc">
+      <span class="lg-enemy-name" data-ru="${nameRu}" data-en="${nameEn}">${nameRu}</span>
+      <span class="lg-enemy-note" data-ru="${descRu}" data-en="${descEn}">${descRu}</span>
+    </div>
+  </div>`;
 }
 
 function heartSvg() {
@@ -249,8 +263,12 @@ export class LegendUI {
           ${platRow(platFloat(),  'парящая',  'floating', '1×')}
         `)}
 
-        ${section('ПРЕПЯТСТВИЯ', 'OBSTACLES', `
-          ${platRow(platBarrier(), 'барьер', 'barrier', '🔫')}
+        ${section('БАРЬЕРЫ', 'BARRIERS', `
+          ${barrierRow(barrierSvg('#ff2244','#ff4466'),      '🔴 КРАСНЫЙ',    '🔴 RED',      '1 выстрел = уничтожен',              '1 shot to destroy')}
+          ${barrierRow(barrierSvg('#0088ff','#44aaff',[3,4]),'🔵 СИНИЙ',      '🔵 BLUE',     'есть дырка · выстрелами расширяется', 'has gap · shots remove cubes')}
+          ${barrierRow(barrierSvg('#ffcc00','#ffee88'),      '🟡 ЗОЛОТОЙ',    '🟡 ARMORED',  '3 выстрела · трескается',            '3 shots · cracks visually')}
+          ${barrierRow(barrierSvg('#ff7700','#ffbb44',[3,4]),'🟠 ДВИЖУЩИЙСЯ', '🟠 MOVING',   'дырка движется ←→ · не сломать',    'gap slides ←→ · indestructible')}
+          ${barrierRow(barrierSvg('#aa22ff','#cc66ff'),      '🟣 ВЗРЫВНОЙ',   '🟣 EXPLOSIVE','взрывается сам · можно расстрелять', 'self-destructs · shoot to defuse')}
         `)}
 
         ${section('ВРАГИ', 'ENEMIES', `

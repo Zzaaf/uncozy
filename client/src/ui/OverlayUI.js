@@ -45,8 +45,9 @@ export class OverlayUI {
     this.callbacks = callbacks;
   }
 
-  _btn(action, icon, labelKey, type = 'button') {
-    return `<button data-action="${action}" type="${type}">
+  _btn(action, icon, labelKey, type = 'button', extraClass = '') {
+    const cls = extraClass ? ` class="${extraClass}"` : '';
+    return `<button data-action="${action}" type="${type}"${cls}>
       <span class="btn-icon">${icon}</span>
       <span class="btn-text">${t(labelKey)}</span>
     </button>`;
@@ -62,7 +63,7 @@ export class OverlayUI {
           ${this._btn('start',    '🎮', 'menu_start')}
           ${this._btn('scores',   '🏆', 'menu_scores')}
           ${this._btn('settings', '⚙️', 'menu_settings')}
-          ${this._btn('exit',     '🚪', 'menu_exit')}
+          ${this._btn('logout',   '🚪', 'auth_logout', 'button', 'btn--danger')}
         </div>
         <p class="hint">${t('menu_hint')}</p>
       </div>
@@ -157,7 +158,6 @@ export class OverlayUI {
           <div class="actions">
             ${this._btn('save-settings', '💾', 'settings_save', 'submit')}
             ${this._btn('back',          '◀️', 'back')}
-            ${this._btn('logout',        '🚪', 'auth_logout')}
           </div>
         </form>
       </div>

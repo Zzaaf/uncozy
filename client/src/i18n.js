@@ -1,6 +1,6 @@
 const T = {
   ru: {
-    title:            'DOODLE\nJUMP',
+    title:            'UNCOZY',
     subtitle:         '★ PIXEL EDITION ★',
 
     menu_start:       'СТАРТ',
@@ -65,7 +65,7 @@ const T = {
   },
 
   en: {
-    title:            'DOODLE\nJUMP',
+    title:            'UNCOZY',
     subtitle:         '★ PIXEL EDITION ★',
 
     menu_start:       'START',
