@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CAMERA, PLATFORM, WORLD_HEIGHT, WORLD_WIDTH, LEVEL_BG_COLORS, getLevelFromScore } from './constants.js';
-import { Doodler } from './entities/Doodler.js';
+import { Hero } from './entities/Hero.js';
 import { PlatformManager } from './entities/PlatformManager.js';
 import { BarrierManager } from './entities/BarrierManager.js';
 import { EnemyManager } from './entities/EnemyManager.js';
@@ -38,7 +38,7 @@ export class GameWorld {
     this.platformManager = new PlatformManager(this.scene);
     this.barrierManager  = new BarrierManager(this.scene);
     this.enemyManager    = new EnemyManager(this.scene);
-    this.doodler         = new Doodler(this.scene);
+    this.doodler         = new Hero(this.scene);
 
     // Shared projectile geometry/material (one projectile at a time)
     this._projGeo = new THREE.BoxGeometry(PROJ_W, PROJ_H, PROJ_W);

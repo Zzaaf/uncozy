@@ -1,6 +1,6 @@
-# Doodle Jump — Pixel Edition
+# UNCOZY — Pixel Edition
 
-Браузерная аркада в жанре endless-jumper, вдохновлённая оригинальным Doodle Jump. Игрок управляет персонажем, который прыгает по платформам вверх. Реализована система аутентификации, глобальная таблица лидеров в реальном времени и несколько видов платформ/препятствий.
+Браузерная аркада в жанре endless-jumper. Игрок управляет персонажем, прыгающим по платформам вверх, уклоняясь от врагов и разрушая барьеры. Реализована система аутентификации, таблица лидеров с онлайн-статусом в реальном времени (WebSocket) и глубокая система усложнения по уровням.
 
 ---
 
@@ -10,6 +10,7 @@
 - [Архитектура проекта](#архитектура-проекта)
 - [Игровой движок](#игровой-движок)
 - [API](#api)
+- [WebSocket](#websocket)
 - [Модель данных](#модель-данных)
 - [Структура файлов](#структура-файлов)
 - [Запуск в разработке](#запуск-в-разработке)
@@ -27,17 +28,19 @@
 | [Vite](https://vitejs.dev/) | ^8 | Dev-сервер, сборка и бандлинг |
 | [Three.js](https://threejs.org/) | ^0.183 | 3D-рендеринг игровой сцены |
 | JavaScript (ESM) | — | Вся логика клиента |
-| CSS (custom) | — | Pixel-art UI, Press Start 2P, CRT-эффект |
+| CSS (custom) | — | Pixel-art UI, Press Start 2P, CRT-эффект, кастомный курсор |
+| WebSocket API | — | Онлайн-присутствие игроков в реальном времени |
 
 ### Сервер (`server/`)
 
 | Технология | Версия | Назначение |
 |---|---|---|
-| [NestJS](https://nestjs.com/) | ^10 | HTTP-фреймворк (TypeScript) |
+| [NestJS](https://nestjs.com/) | ^11 | HTTP + WebSocket фреймворк (TypeScript) |
 | [Prisma](https://www.prisma.io/) | ^5 | ORM, миграции |
 | [PostgreSQL](https://www.postgresql.org/) | — | БД (Supabase-hosted) |
 | [Passport.js](http://www.passportjs.org/) + JWT | — | Аутентификация |
 | [bcrypt](https://github.com/kelektiv/node.bcrypt.js) | — | Хэширование паролей |
+| `@nestjs/websockets` + `ws` | — | WebSocket-шлюз (онлайн-присутствие) |
 | `@nestjs/serve-static` | — | Раздача фронтенда из `client/dist` |
 | `class-validator` | — | Валидация DTO |
 
@@ -50,52 +53,56 @@
 ```
 doodle-jump/
 ├── client/        ← браузерная игра (Vite + Three.js)
-└── server/        ← REST API + статика (NestJS + PostgreSQL)
+└── server/        ← REST API + WebSocket + статика (NestJS + PostgreSQL)
 ```
 
 ### Схема взаимодействия
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  Браузер                                                │
-│                                                         │
-│  ┌─────────────┐   ┌──────────────┐   ┌─────────────┐  │
-│  │ Legend Panel│   │  Game Shell  │   │  Leaderboard│  │
-│  │  (LegendUI) │   │  (Three.js)  │   │   (LB UI)   │  │
-│  │             │   │  480 px фикс │   │  polling 12s│  │
-│  └─────────────┘   └──────┬───────┘   └──────┬──────┘  │
-│                           │                  │          │
-│              ┌────────────▼──────────────────▼──────┐  │
-│              │            GameApp (оркестратор)      │  │
-│              │  AuthApi ─── fetch ──► /api/*         │  │
-│              └───────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────┘
-                              │ HTTP / JWT
-┌─────────────────────────────▼───────────────────────────┐
-│  NestJS Server (:3000)                                  │
-│                                                         │
-│  AuthController     UsersController                     │
-│  POST /api/auth/register    GET  /api/users/leaderboard │
-│  POST /api/auth/login       GET  /api/users/me          │
-│  GET  /api/auth/me          PATCH /api/users/me/score   │
-│                             PATCH /api/users/me/username│
-│                                                         │
-│  AuthService ◄──► UsersService ◄──► PrismaService       │
-│                                          │              │
-│                              ┌───────────▼───────────┐  │
-│                              │  PostgreSQL (Supabase) │  │
-│                              └───────────────────────┘  │
-│                                                         │
-│  ServeStatic: client/dist/** (все не-API маршруты)      │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  Браузер                                                     │
+│                                                              │
+│  ┌─────────────┐   ┌──────────────┐   ┌──────────────────┐   │
+│  │  LegendUI   │   │  Game Shell  │   │  LeaderboardUI   │   │
+│  │ левая панель│   │  (Three.js)  │   │ правая панель    │   │
+│  │             │   │  480 px фикс │   │ ● онлайн-статус  │   │
+│  └─────────────┘   └──────┬───────┘   └────────┬─────────┘   │
+│                           │                    │             │
+│              ┌────────────▼────────────────────▼───────── ─┐ │
+│              │          GameApp (оркестратор)              │ │
+│              │  AuthApi ──── fetch ──► /api/*              │ │
+│              │  WsClient ─── ws:// ──► /ws                 │ │
+│              └─────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+                    │ HTTP+JWT          │ WebSocket+JWT
+┌───────────────────▼───────────────────▼──────────────────────┐
+│  NestJS Server (:3000)                                       │
+│                                                              │
+│  AuthController          UsersController                     │
+│  POST /api/auth/register    GET  /api/users/leaderboard      │
+│  POST /api/auth/login       GET  /api/users/me               │
+│  GET  /api/auth/me          PATCH /api/users/me/score        │
+│                             PATCH /api/users/me/username     │
+│                                                              │
+│  PresenceGateway (ws: /ws)                                   │
+│  ← auth → broadcast presence:online                          │
+│                                                              │
+│  AuthService ◄──► UsersService ◄──► PrismaService            │
+│                                           │                  │
+│                               │  PostgreSQL (Supabase)│      │
+│                               └───────────────────────┘      │
+│                                                              │
+│  ServeStatic: client/dist/** (все не-API маршруты)           │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Принципы дизайна
 
-- **Монолитный деплой**: один процесс Node.js раздаёт и API и статику клиента — нет необходимости в отдельном веб-сервере (nginx/Caddy).
-- **JWT без сессий**: сервер stateless. Токен хранится в `localStorage`, отправляется в `Authorization: Bearer`.
+- **Монолитный деплой**: один процесс Node.js раздаёт и API, и WebSocket, и статику клиента.
+- **JWT без сессий**: сервер stateless. Токен хранится в `localStorage`, отправляется в `Authorization: Bearer` (HTTP) и в первом WS-сообщении `{ type: "auth", token }`.
 - **Публичный ID**: внутренний `BigInt id` никогда не покидает сервер. Наружу отдаётся только `publicId` (UUID).
-- **Живой счёт без WebSocket**: `LeaderboardUI` опрашивает `/api/users/leaderboard` каждые 12 секунд.
+- **WebSocket на том же порту**: используется HTTP Upgrade, отдельный порт не нужен — работает на Render.com и любых PaaS без дополнительных настроек.
+- **Онлайн = открытая вкладка**: факт подключённого WS-соединения считается онлайном; разрыв вкладки снимает статус мгновенно.
 
 ---
 
@@ -107,17 +114,42 @@ doodle-jump/
 
 | Файл | Назначение |
 |---|---|
-| `Doodler.js` | Персонаж игрока, три скина (Hero / Robot / Mage), физика прыжка |
+| `Hero.js` | Персонаж игрока, три скина (Hero / Robot / Wizard), физика прыжка, мигание после возрождения |
 | `PlatformManager.js` | Пул из 28 платформ, четыре типа: normal / super / float / crumble |
-| `BarrierManager.js` | Препятствия-барьеры, физика столкновений |
+| `EnemyManager.js` | Враги с постепенным введением по уровням (crawler / flyer / shooter / dropper) |
+| `BarrierManager.js` | Пять типов барьеров с введением по уровням, таймерный спавн |
 
 ### Типы платформ
 
 | Тип | Цвет | Поведение |
 |---|---|---|
-| `normal` | разный | Обычная, бесконечная |
-| `super` | ярко-жёлтый | Сверх-прыжок (×2.5 скорость) |
+| `normal` | разный | Обычная, стационарная |
+| `super` | ярко-жёлтый | Супер-прыжок (×2.5 скорости) |
 | `float` | анимация волны | Исчезает после одного отскока |
+| `crumble` | красный | Разрушается от выстрела игрока |
+
+### Типы барьеров
+
+Барьеры полностью блокируют путь вверх и вводятся постепенно по уровням:
+
+| Тип | Цвет | Вводится | Механика |
+|---|---|---|---|
+| `destroy` | красный | уровень 1 | Разрушается от одного выстрела |
+| `gap` | синий | уровень 2 | Содержит дыру; каждый выстрел сбивает один кубик; слот-детекция попаданий |
+| `armored` | золотой → оранжевый → тёмно-красный | уровень 3 | Выдерживает 3 попадания, меняет цвет при каждом |
+| `moving` | фиолетовый | уровень 5 | Движется горизонтально, дыра смещается синусоидально |
+| `explosive` | фиолетовый → красный | уровень 7 | Таймер-запал (3 с), взрыв убивает игрока в радиусе |
+
+### Типы врагов
+
+Враги вводятся постепенно, чтобы сложность нарастала предсказуемо:
+
+| Тип | Вводится | Поведение |
+|---|---|---|
+| `crawler` | уровень 2 | Ходит горизонтально по платформам |
+| `flyer` | уровень 3 | Летает, атакует при сближении |
+| `shooter` | уровень 5 | Стреляет снарядами в игрока |
+| `dropper` | уровень 7 | Падает на игрока сверху |
 
 ### Игровой цикл (`GameWorld.js`)
 
@@ -125,22 +157,43 @@ doodle-jump/
 requestAnimationFrame → GameApp.loop(dt)
   → InputController.getHorizontal()
   → GameWorld.update(dt, dx, doShoot)
-      → Doodler.update()         ← физика: гравитация, прыжки
-      → PlatformManager.update() ← анимация float, переработка пула
-      → BarrierManager.update()  ← движение барьеров
-      → collision detection      ← платформы, барьеры, сердца
-      → camera follow            ← OrthographicCamera по Y
-  → leaderboardUI.setLiveScore() ← живой счёт в правой панели
+      → Hero.update()              ← физика: гравитация, прыжки
+      → PlatformManager.update()   ← анимация float, переработка пула
+      → EnemyManager.update()      ← AI, патрулирование, стрельба
+      → BarrierManager.update()    ← движение, запал взрыва, спавн
+      → collision detection        ← платформы, барьеры, враги, сердца
+      → camera follow              ← OrthographicCamera по Y
+  → leaderboardUI.setLiveScore()  ← живой счёт в правой панели
 ```
+
+### Система жизней и Game Over
+
+- Начальных жизней: 3. Максимум: 5 (собираются сердца на платформах).
+- При смерти (падение ниже камеры, враг, взрыв): жизнь снимается, герой респавнится с миганием (1 с инвалидности).
+- При 0 жизней: красный баннер «GAME OVER!» / «ИГРА ОКОНЧЕНА!» (5 с) → оверлей с итогом.
+
+### Кастомные курсоры
+
+Три состояния через CSS-переменные с pixel-art SVG:
+
+| Состояние | Переменная | Вид |
+|---|---|---|
+| Обычный | `--cur-default` | Cyan |
+| Наведение | `--cur-pointer` | Yellow |
+| Клик | `--cur-active` | White |
+
+### Локализация
+
+Полная поддержка **ru** / **en** через `i18n.js`. Атрибуты `data-ru` / `data-en` используются для статических текстов в панелях. Язык сохраняется в `localStorage`.
 
 ### Слои UI
 
 | Класс | Описание |
 |---|---|
-| `OverlayUI` | Все оверлеи поверх игры: меню, паузу, настройки, auth-форму |
-| `LegendUI` | Левая панель (только десктоп): управление, персонажи, платформы |
-| `LeaderboardUI` | Правая панель (только десктоп): топ-10 + живой счёт |
-| `GameApp` | Оркестратор: состояния, переходы, связь UI ↔ движок ↔ API |
+| `OverlayUI` | Все оверлеи: меню (с кнопкой «Выйти из аккаунта»), пауза, настройки, auth-форма |
+| `LegendUI` | Левая панель (десктоп): управление, персонажи, все типы платформ и барьеров |
+| `LeaderboardUI` | Правая панель (десктоп): топ-10, живой счёт, `●` онлайн-статус игроков |
+| `GameApp` | Оркестратор: состояния, переходы, связь UI ↔ движок ↔ API ↔ WsClient |
 
 ---
 
@@ -161,9 +214,9 @@ requestAnimationFrame → GameApp.loop(dt)
 | Метод | Путь | Тело | Описание |
 |---|---|---|---|
 | `GET` | `/api/users/me` | — 🔒 | Профиль текущего пользователя |
-| `PATCH` | `/api/users/me/score` | `{ score }` 🔒 | Сохранить рекорд (обновляет если лучше) |
+| `PATCH` | `/api/users/me/score` | `{ score }` 🔒 | Сохранить рекорд (обновляет только если лучше) |
 | `PATCH` | `/api/users/me/username` | `{ username }` 🔒 | Сменить никнейм (уникальность проверяется) |
-| `GET` | `/api/users/leaderboard` | — 🔒 | Топ-10 + место текущего игрока |
+| `GET` | `/api/users/leaderboard` | — 🔒 | Топ-10 + позиция текущего игрока; записи включают `publicId` для сопоставления с WS-онлайном |
 
 ### Валидация никнейма
 
@@ -173,12 +226,50 @@ requestAnimationFrame → GameApp.loop(dt)
 
 ---
 
+## WebSocket
+
+Шлюз доступен по пути `/ws` на том же порту, что и HTTP (Upgrade). Используется `ws`-адаптер NestJS.
+
+### Протокол (клиент → сервер)
+
+| Тип сообщения | Поля | Описание |
+|---|---|---|
+| `auth` | `{ token }` | **Первое сообщение после подключения.** JWT-токен. Должен прийти в течение 5 с, иначе соединение закрывается (код 4001). |
+| `ping` | — | Клиентский keep-alive. |
+
+### Протокол (сервер → клиент)
+
+| Тип сообщения | Поля | Описание |
+|---|---|---|
+| `presence:online` | `{ users: [{ id, username }] }` | Рассылается всем авторизованным клиентам при каждом подключении и отключении. Содержит полный список онлайн-игроков. |
+| `pong` | — | Ответ на ping (интервал 25 с). |
+
+### Коды закрытия
+
+| Код | Причина |
+|---|---|
+| 4001 | Таймаут аутентификации (5 с без `auth`-сообщения) |
+| 4002 | Первое сообщение не является `auth` |
+| 4003 | Невалидный или истёкший JWT |
+
+### Переподключение клиента
+
+`WsClient.js` реализует экспоненциальный backoff: 2 с → 4 с → 8 с … до максимума 30 с. Переподключение происходит автоматически при любом разрыве.
+
+### Будущее расширение (заложено в протоколе)
+
+Тип-поле `WsMsg` уже поддерживает:
+- `chat:global` — глобальный чат
+- `chat:dm` — личные сообщения между игроками
+
+---
+
 ## Модель данных
 
 ```prisma
 model User {
   id           BigInt   @id @default(autoincrement())  // внутренний, не экспонируется
-  publicId     String   @unique                        // UUID, используется в API и JWT
+  publicId     String   @unique                        // UUID, используется в API, JWT и WS
   username     String   @unique
   email        String   @unique
   passwordHash String                                  // bcrypt, 10 раундов
@@ -197,50 +288,56 @@ model User {
 .
 ├── client/
 │   ├── src/
-│   │   ├── main.js              # точка входа, монтирование DOM
-│   │   ├── style.css            # pixel-art тема, CRT-эффект
-│   │   ├── i18n.js              # ru/en переводы (t(), setLang())
+│   │   ├── main.js                  # точка входа, монтирование DOM
+│   │   ├── style.css                # pixel-art тема, CRT-эффект, кастомные курсоры
+│   │   ├── i18n.js                  # ru/en переводы (t(), setLang(), getLang())
 │   │   ├── core/
-│   │   │   └── GameApp.js       # главный оркестратор
+│   │   │   ├── GameApp.js           # главный оркестратор (состояния, auth, WS)
+│   │   │   └── WsClient.js          # WebSocket-клиент (авторизация, reconnect)
 │   │   ├── game/
-│   │   │   ├── GameWorld.js     # игровой цикл, физика
-│   │   │   ├── constants.js     # параметры игры
+│   │   │   ├── GameWorld.js         # игровой цикл, физика, collision detection
+│   │   │   ├── constants.js         # параметры игры
 │   │   │   └── entities/
-│   │   │       ├── Doodler.js
+│   │   │       ├── Hero.js          # персонаж игрока (физика, скины, мигание)
 │   │   │       ├── PlatformManager.js
-│   │   │       └── BarrierManager.js
+│   │   │       ├── EnemyManager.js  # crawler / flyer / shooter / dropper
+│   │   │       └── BarrierManager.js # destroy / gap / armored / moving / explosive
 │   │   ├── ui/
-│   │   │   ├── OverlayUI.js     # оверлеи (меню, пауза, auth)
-│   │   │   ├── LegendUI.js      # левая панель (десктоп)
-│   │   │   └── LeaderboardUI.js # правая панель (десктоп)
+│   │   │   ├── OverlayUI.js         # оверлеи (меню, пауза, настройки, auth)
+│   │   │   ├── LegendUI.js          # левая панель (десктоп): легенда игры
+│   │   │   └── LeaderboardUI.js     # правая панель: топ-10, онлайн-статус
 │   │   ├── api/
-│   │   │   └── AuthApi.js       # fetch-обёртки для всех /api/* эндпоинтов
+│   │   │   └── AuthApi.js           # fetch-обёртки для всех /api/* эндпоинтов
 │   │   ├── input/
-│   │   │   └── InputController.js # клавиатура + мышь + тач
+│   │   │   └── InputController.js   # клавиатура + мышь + тач
 │   │   └── storage/
-│   │       └── ScoreStore.js    # localStorage: язык, скин
+│   │       └── ScoreStore.js        # localStorage: язык, скин, имя игрока
 │   ├── public/
 │   │   └── icons.svg
+│   ├── vite.config.js               # proxy /api и /ws → localhost:3000
 │   └── package.json
 │
 ├── server/
 │   ├── src/
-│   │   ├── main.ts              # bootstrap, CORS, порт
-│   │   ├── app.module.ts        # ServeStatic + глобальные модули
+│   │   ├── main.ts                  # bootstrap, WsAdapter, CORS, порт
+│   │   ├── app.module.ts            # ServeStatic + глобальные модули
 │   │   ├── config/
-│   │   │   └── configuration.ts # env → типизированный конфиг
+│   │   │   └── configuration.ts    # env → типизированный конфиг
 │   │   ├── prisma/
-│   │   │   ├── prisma.module.ts # @Global()
+│   │   │   ├── prisma.module.ts    # @Global()
 │   │   │   └── prisma.service.ts
 │   │   └── modules/
-│   │       ├── auth/            # JWT-стратегия, register/login
-│   │       └── users/           # профиль, рекорды, лидерборд
+│   │       ├── auth/               # JWT-стратегия, register/login
+│   │       ├── users/              # профиль, рекорды, лидерборд
+│   │       └── presence/           # WebSocket-шлюз онлайн-статуса
+│   │           ├── presence.gateway.ts
+│   │           └── presence.module.ts
 │   ├── prisma/
 │   │   ├── schema.prisma
 │   │   └── migrations/
 │   └── package.json
 │
-├── package.json                 # корневые скрипты (build, start)
+├── package.json                     # корневые скрипты (build, start)
 └── README.md
 ```
 
@@ -301,7 +398,7 @@ npm run dev --prefix client
 
 Открыть: [http://localhost:5173](http://localhost:5173)
 
-> Vite проксирует `/api/*` на `localhost:3000` — настройка в `client/vite.config.js`.
+> Vite проксирует `/api/*` → `localhost:3000` (HTTP) и `/ws` → `localhost:3000` (WebSocket). Настройка в `client/vite.config.js`.
 
 ### Открыть с телефона в той же сети
 
@@ -325,25 +422,13 @@ npm run build
 2. `nest build` → `server/dist/`
 3. `vite build` → `client/dist/`
 
-NestJS при старте раздаёт `client/dist` как статику через `ServeStatic`.
+NestJS при старте раздаёт `client/dist` как статику через `ServeStatic`. WebSocket (`/ws`) работает на том же порту через HTTP Upgrade.
 
 ### Запуск
 
 ```bash
 npm start
 # эквивалент: npm run start:prod --prefix server
-```
-
-Сервер поднимается на `PORT` (по умолчанию `3000`) и обслуживает и API, и фронтенд.
-
-### Переменная окружения для порта
-
-```bash
-# bash / Linux / macOS
-PORT=8080 npm start
-
-# Windows PowerShell
-$env:PORT=8080; npm start
 ```
 
 ### Деплой на Railway / Render / Fly.io
@@ -353,16 +438,18 @@ $env:PORT=8080; npm start
 3. Start command: `npm start`
 4. Применить миграции: `npx prisma migrate deploy` (можно добавить в build command).
 
+> WebSocket работает без дополнительных настроек — тот же порт, что и HTTP.
+
 ### Деплой на VPS (systemd)
 
 ```ini
-# /etc/systemd/system/doodle-jump.service
+# /etc/systemd/system/uncozy.service
 [Unit]
-Description=Doodle Jump Server
+Description=UNCOZY Game Server
 After=network.target
 
 [Service]
-WorkingDirectory=/opt/doodle-jump
+WorkingDirectory=/opt/uncozy
 ExecStart=/usr/bin/node server/dist/main.js
 Restart=always
 Environment=NODE_ENV=production
@@ -375,8 +462,8 @@ WantedBy=multi-user.target
 ```
 
 ```bash
-systemctl enable doodle-jump
-systemctl start doodle-jump
+systemctl enable uncozy
+systemctl start uncozy
 ```
 
 ---
@@ -387,7 +474,7 @@ systemctl start doodle-jump
 |---|---|---|---|
 | `DATABASE_URL` | ✅ | — | PostgreSQL connection string |
 | `JWT_SECRET` | ✅ | — | Секрет для подписи JWT (мин. 32 символа) |
-| `PORT` | ❌ | `3000` | Порт HTTP-сервера |
+| `PORT` | ❌ | `3000` | Порт HTTP + WebSocket сервера |
 | `JWT_EXPIRES_IN` | ❌ | `30d` | Время жизни токена |
 
 ---

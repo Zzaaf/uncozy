@@ -3,6 +3,7 @@ import { GameWorld } from '../game/GameWorld.js';
 import { ScoreStore } from '../storage/ScoreStore.js';
 import { OverlayUI } from '../ui/OverlayUI.js';
 import { AuthApi } from '../api/AuthApi.js';
+import { WsClient } from './WsClient.js';
 import { setLang, t } from '../i18n.js';
 import { INITIAL_LIVES, MAX_LIVES } from '../game/constants.js';
 
@@ -38,6 +39,9 @@ export class GameApp {
     this.input     = new InputController(this.gameContainer);
     this.state     = GAME_STATES.MENU;
     this.rafId     = null;
+    this.ws = new WsClient({
+      onOnline: (users) => this.leaderboardUI?.setOnline(users),
+    });
     this.lastTimestamp = 0;
     this._backTarget   = GAME_STATES.MENU;
 
@@ -81,6 +85,7 @@ export class GameApp {
       this.playerName = user.username;
       this.scoreStore.setPlayerName(user.username);
       this.leaderboardUI?.start();
+      this._connectWs();
       this.showMenu();
     } else {
       this.showAuth();
@@ -98,6 +103,7 @@ export class GameApp {
       this.playerName = user.username;
       this.scoreStore.setPlayerName(user.username);
       this.leaderboardUI?.start();
+      this._connectWs();
       this.showMenu();
     } catch (err) {
       this.ui.showAuthError(err.message);
@@ -110,6 +116,7 @@ export class GameApp {
       this.playerName = user.username;
       this.scoreStore.setPlayerName(user.username);
       this.leaderboardUI?.start();
+      this._connectWs();
       this.showMenu();
     } catch (err) {
       this.ui.showAuthError(err.message);
@@ -119,8 +126,14 @@ export class GameApp {
   logout() {
     AuthApi.logout();
     cancelAnimationFrame(this.rafId);
+    this.ws.disconnect();
     this.leaderboardUI?.stop();
     this.showAuth();
+  }
+
+  _connectWs() {
+    const token = AuthApi.getToken();
+    if (token) this.ws.connect(token);
   }
 
   handleKeyDown(e) {

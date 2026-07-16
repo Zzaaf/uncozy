@@ -75,6 +75,7 @@ export class UsersService {
 
     const entries = top.map((u, i) => ({
       rank: i + 1,
+      publicId: u.publicId,
       username: u.username,
       highScore: u.highScore,
       isMe: u.publicId === currentPublicId,
@@ -83,7 +84,7 @@ export class UsersService {
     const meInTop = entries.some(e => e.isMe);
     const myEntry =
       me && myRank !== null && !meInTop
-        ? { rank: myRank, username: me.username, highScore: me.highScore }
+        ? { rank: myRank, publicId: me.publicId, username: me.username, highScore: me.highScore }
         : null;
 
     return { entries, myEntry };

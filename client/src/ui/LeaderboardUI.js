@@ -1,18 +1,22 @@
 import { AuthApi } from '../api/AuthApi.js';
 import { getLang } from '../i18n.js';
 
-const POLL_INTERVAL = 12_000;
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 export class LeaderboardUI {
   constructor(el, { onClose } = {}) {
     this.el = el;
-    this._onClose   = onClose;
-    this._pollId    = null;
-    this._data      = null;
-    this._liveScore = 0;
+    this._onClose    = onClose;
+    this._data       = null;
+    this._liveScore  = 0;
     this._liveActive = false;
+    this._onlineIds  = new Set();
     this._renderSkeleton();
+  }
+
+  setOnline(users) {
+    this._onlineIds = new Set((users ?? []).map(u => u.id));
+    if (this._data) this._renderData(this._data);
   }
 
   _closeBtnHtml() {
@@ -32,12 +36,9 @@ export class LeaderboardUI {
 
   start() {
     this._fetch();
-    this._pollId = setInterval(() => this._fetch(), POLL_INTERVAL);
   }
 
   stop() {
-    clearInterval(this._pollId);
-    this._pollId    = null;
     this._liveActive = false;
     this._liveScore = 0;
     this._renderSkeleton();
@@ -189,10 +190,12 @@ export class LeaderboardUI {
       const medal = e.rank <= 3
         ? `<span class="lb-medal">${MEDALS[e.rank - 1]}</span>`
         : `<span class="lb-rank">#${e.rank}</span>`;
+      const isOnline = e.publicId && this._onlineIds.has(e.publicId);
+      const onlineDot = isOnline ? ' <span class="lb-online" title="online">●</span>' : '';
       return `
         <div class="lb-row${e.isMe ? ' lb-row--me' : ''}">
           <div class="lb-rank-cell">${medal}</div>
-          <div class="lb-name">${escHtml(e.username)}${e.isMe ? ' <span class="lb-you">●</span>' : ''}</div>
+          <div class="lb-name">${escHtml(e.username)}${e.isMe ? ' <span class="lb-you">●</span>' : onlineDot}</div>
           <div class="lb-score">${e.highScore.toLocaleString()}</div>
         </div>`;
     }).join('');
@@ -201,11 +204,13 @@ export class LeaderboardUI {
       ? `<div class="lb-empty">${ru ? 'Пока нет результатов' : 'No scores yet'}</div>`
       : '';
 
+    const myOnlineDot = myEntry?.publicId && this._onlineIds.has(myEntry.publicId)
+      ? ' <span class="lb-online" title="online">●</span>' : '';
     const myEntryHtml = myEntry ? `
       <div class="lb-separator"></div>
       <div class="lb-row lb-row--me lb-row--outside">
         <div class="lb-rank-cell"><span class="lb-rank">#${myEntry.rank}</span></div>
-        <div class="lb-name">${escHtml(myEntry.username)} <span class="lb-you">●</span></div>
+        <div class="lb-name">${escHtml(myEntry.username)} <span class="lb-you">●</span>${myOnlineDot}</div>
         <div class="lb-score">${myEntry.highScore.toLocaleString()}</div>
       </div>` : '';
 

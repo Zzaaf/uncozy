@@ -622,6 +622,13 @@ body {
   text-shadow: 0 0 6px var(--px-green);
   vertical-align: middle;
 }
+.lb-online {
+  font-size: 8px;
+  color: #00e5ff;
+  text-shadow: 0 0 5px #00e5ff;
+  vertical-align: middle;
+  margin-left: 2px;
+}
 
 .lb-separator {
   height: 1px;

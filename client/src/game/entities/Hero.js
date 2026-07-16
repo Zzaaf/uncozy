@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { DOODLER, WORLD_WIDTH, SUPER_JUMP_MULTIPLIER } from '../constants.js';
 
-export class Doodler {
+export class Hero {
   constructor(scene) {
     this.scene = scene;
     this.position = new THREE.Vector3(0, 3, 0);
