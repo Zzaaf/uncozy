@@ -123,17 +123,16 @@ export class GameApp {
     }
   }
 
-  logout() {
-    AuthApi.logout();
+  async logout() {
     cancelAnimationFrame(this.rafId);
     this.ws.disconnect();
     this.leaderboardUI?.stop();
+    await AuthApi.logout();
     this.showAuth();
   }
 
   _connectWs() {
-    const token = AuthApi.getToken();
-    if (token) this.ws.connect(token);
+    this.ws.connect();
   }
 
   handleKeyDown(e) {

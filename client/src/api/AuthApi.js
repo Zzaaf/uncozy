@@ -1,71 +1,69 @@
-const TOKEN_KEY = 'doodle_jump_token';
-const USER_KEY  = 'doodle_jump_user';
+const USER_KEY = 'uncozy_user';
+
+function getCsrfToken() {
+  const m = document.cookie.match(/(?:^|;\s*)uncozy_csrf=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+function csrfHeaders() {
+  return { 'X-CSRF-Token': getCsrfToken() };
+}
 
 export const AuthApi = {
   async register(username, email, password) {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email, password }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(Array.isArray(data.message) ? data.message.join(', ') : (data.message || 'Registration failed'));
-    this._persist(data);
+    this._persistUser(data.user);
     return data;
   },
 
   async login(username, password) {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(Array.isArray(data.message) ? data.message.join(', ') : (data.message || 'Login failed'));
-    this._persist(data);
+    this._persistUser(data.user);
     return data;
   },
 
-  async me() {
-    const token = this.getToken();
-    if (!token) return null;
+  async logout() {
     try {
-      const res = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: csrfHeaders(),
       });
-      if (!res.ok) { this.logout(); return null; }
+    } catch { /* silent — cookie still cleared by server */ }
+    this._clearUser();
+  },
+
+  async me() {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!res.ok) { this._clearUser(); return null; }
       return (await res.json()).user;
     } catch {
       return null;
     }
   },
 
-  _persist({ accessToken, user }) {
-    localStorage.setItem(TOKEN_KEY, accessToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-  },
-
-  getToken() { return localStorage.getItem(TOKEN_KEY); },
-
-  getUser() {
-    try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch { return null; }
-  },
-
-  logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-  },
-
-  isLoggedIn() { return !!this.getToken(); },
-
   async updateUsername(username) {
-    const token = this.getToken();
-    if (!token) throw new Error('Not authenticated');
     const res = await fetch('/api/users/me/username', {
       method: 'PATCH',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+        ...csrfHeaders(),
       },
       body: JSON.stringify({ username }),
     });
@@ -80,12 +78,8 @@ export const AuthApi = {
   },
 
   async getLeaderboard() {
-    const token = this.getToken();
-    if (!token) return null;
     try {
-      const res = await fetch('/api/users/leaderboard', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch('/api/users/leaderboard', { credentials: 'include' });
       if (!res.ok) return null;
       return res.json();
     } catch {
@@ -94,12 +88,11 @@ export const AuthApi = {
   },
 
   async startGameSession() {
-    const token = this.getToken();
-    if (!token) return null;
     try {
       const res = await fetch('/api/game/session', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
+        headers: csrfHeaders(),
       });
       if (!res.ok) return null;
       return (await res.json()).sessionToken ?? null;
@@ -109,17 +102,33 @@ export const AuthApi = {
   },
 
   async submitScore(score, sessionToken) {
-    const token = this.getToken();
-    if (!token || !sessionToken) return;
+    if (!sessionToken) return;
     try {
       await fetch('/api/users/me/score', {
         method: 'PATCH',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          ...csrfHeaders(),
         },
         body: JSON.stringify({ score: Math.floor(score), sessionToken }),
       });
-    } catch { /* silent — offline or network error */ }
+    } catch { /* silent */ }
+  },
+
+  _persistUser(user) {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  },
+
+  _clearUser() {
+    localStorage.removeItem(USER_KEY);
+  },
+
+  getUser() {
+    try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch { return null; }
+  },
+
+  isLoggedIn() {
+    return !!this.getUser();
   },
 };

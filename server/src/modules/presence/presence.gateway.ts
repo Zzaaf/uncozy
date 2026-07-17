@@ -10,8 +10,8 @@ import { ConfigService } from '@nestjs/config';
 import type { IncomingMessage } from 'http';
 import type WebSocket from 'ws';
 
-const WS_MSG_LIMIT    = 30;   // max messages per window
-const WS_MSG_WINDOW   = 60_000; // 1 minute window
+const WS_MSG_LIMIT  = 30;
+const WS_MSG_WINDOW = 60_000;
 
 interface AuthedSocket extends WebSocket {
   publicId?: string;
@@ -23,10 +23,21 @@ interface AuthedSocket extends WebSocket {
 }
 
 export type WsMsg =
-  | { type: 'auth'; token: string }
   | { type: 'ping' }
   | { type: 'chat:global'; text: string }
   | { type: 'chat:dm'; to: string; text: string };
+
+function parseCookies(header: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const part of header.split(';')) {
+    const idx = part.indexOf('=');
+    if (idx < 1) continue;
+    const key = part.slice(0, idx).trim();
+    const val = part.slice(idx + 1).trim();
+    out[key] = decodeURIComponent(val);
+  }
+  return out;
+}
 
 @WebSocketGateway({ path: '/ws' })
 export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -40,17 +51,46 @@ export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly config: ConfigService,
   ) {}
 
-  handleConnection(socket: AuthedSocket, _req: IncomingMessage) {
-    socket.isAuthed       = false;
-    socket.msgCount       = 0;
+  handleConnection(socket: AuthedSocket, req: IncomingMessage) {
+    // ── Authenticate from httpOnly cookie on Upgrade request ─────────────
+    const cookies = parseCookies(req.headers.cookie ?? '');
+    const token   = cookies['uncozy_access_token'];
+
+    if (!token) { socket.close(4003, 'no_token'); return; }
+
+    let payload: { sub: string; username: string; type?: string };
+    try {
+      payload = this.jwt.verify(token, {
+        secret: this.config.getOrThrow<string>('JWT_SECRET'),
+      }) as typeof payload;
+    } catch {
+      socket.close(4003, 'invalid_token');
+      return;
+    }
+
+    if (payload.type === 'game_session') {
+      socket.close(4003, 'invalid_token');
+      return;
+    }
+
+    socket.publicId      = payload.sub;
+    socket.username      = payload.username;
+    socket.isAuthed      = true;
+    socket.msgCount      = 0;
     socket.msgWindowStart = Date.now();
 
-    const authTimeout = setTimeout(() => {
-      if (!socket.isAuthed) socket.close(4001, 'auth_timeout');
-    }, 5000);
+    this.online.set(payload.sub, socket);
 
+    socket.pingTimer = setInterval(() => {
+      if (socket.readyState === socket.OPEN) {
+        socket.send(JSON.stringify({ type: 'pong' }));
+      }
+    }, 25_000);
+
+    this.broadcastOnline();
+
+    // ── Rate-limited message handling (ping / future chat) ───────────────
     socket.on('message', (raw: Buffer | string) => {
-      // ── Rate limit ──────────────────────────────────────────────
       const now = Date.now();
       if (now - (socket.msgWindowStart ?? 0) > WS_MSG_WINDOW) {
         socket.msgCount       = 0;
@@ -62,50 +102,8 @@ export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect
         return;
       }
 
-      // ── Parse ────────────────────────────────────────────────────
       let msg: WsMsg;
-      try {
-        msg = JSON.parse(raw.toString());
-      } catch {
-        return;
-      }
-
-      // ── Auth handshake ───────────────────────────────────────────
-      if (!socket.isAuthed) {
-        if (msg.type !== 'auth') return socket.close(4002, 'expected_auth');
-        clearTimeout(authTimeout);
-
-        let payload: { sub: string; username: string };
-        try {
-          payload = this.jwt.verify(msg.token, {
-            secret: this.config.getOrThrow<string>('JWT_SECRET'),
-          }) as { sub: string; username: string };
-        } catch {
-          return socket.close(4003, 'invalid_token');
-        }
-
-        // Reject game-session tokens trying to auth as presence
-        const raw_payload = payload as any;
-        if (raw_payload.type === 'game_session') {
-          return socket.close(4003, 'invalid_token');
-        }
-
-        socket.publicId  = payload.sub;
-        socket.username  = payload.username;
-        socket.isAuthed  = true;
-
-        this.online.set(payload.sub, socket);
-
-        socket.pingTimer = setInterval(() => {
-          if (socket.readyState === socket.OPEN) {
-            socket.send(JSON.stringify({ type: 'pong' }));
-          }
-        }, 25000);
-
-        this.broadcastOnline();
-        return;
-      }
-
+      try { msg = JSON.parse(raw.toString()); } catch { return; }
       if (msg.type === 'ping') return;
     });
   }

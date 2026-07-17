@@ -55,9 +55,9 @@ export function getLevelFromScore(score) {
   return 1;
 }
 
-export const SCORE_KEY = 'doodle_jump_scores';
-export const PLAYER_NAME_KEY = 'doodle_jump_player_name';
-export const SKIN_KEY = 'doodle_jump_skin';
-export const LANG_KEY = 'doodle_jump_lang';
+export const SCORE_KEY = 'uncozy_scores';
+export const PLAYER_NAME_KEY = 'uncozy_player_name';
+export const SKIN_KEY = 'uncozy_skin';
+export const LANG_KEY = 'uncozy_lang';
 export const DEFAULT_PLAYER_NAME = 'Player';
 export const MAX_SCORES = 10;

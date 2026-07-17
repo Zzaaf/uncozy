@@ -3,9 +3,10 @@ import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import { GameService } from './game.service';
 import { UserThrottlerGuard } from '../../common/guards/user-throttler.guard';
+import { CsrfGuard } from '../../common/guards/csrf.guard';
 
 @Controller('api/game')
-@UseGuards(AuthGuard('jwt'), UserThrottlerGuard)
+@UseGuards(AuthGuard('jwt'), CsrfGuard, UserThrottlerGuard)
 export class GameController {
   constructor(private readonly game: GameService) {}
 

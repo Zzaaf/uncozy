@@ -1,6 +1,6 @@
 # UNCOZY — Pixel Edition
 
-Браузерная аркада в жанре endless-jumper. Игрок управляет персонажем, прыгающим по платформам вверх, уклоняясь от врагов и разрушая барьеры. Реализована система аутентификации, таблица лидеров с онлайн-статусом в реальном времени (WebSocket), защита счёта от подделки и глубокая система усложнения по уровням.
+Браузерная аркада в жанре endless-jumper. Игрок управляет персонажем, прыгающим по платформам вверх, уклоняясь от врагов и разрушая барьеры. Реализована система аутентификации на httpOnly-куках, таблица лидеров с онлайн-статусом в реальном времени (WebSocket), CSRF-защита, защита счёта от подделки и глубокая система усложнения по уровням.
 
 ---
 
@@ -41,6 +41,7 @@
 | [PostgreSQL](https://www.postgresql.org/) | — | БД (Supabase-hosted) |
 | [Passport.js](http://www.passportjs.org/) + JWT | — | Аутентификация |
 | [bcrypt](https://github.com/kelektiv/node.bcrypt.js) | — | Хэширование паролей |
+| `cookie-parser` | — | Парсинг httpOnly-кук в NestJS |
 | `@nestjs/websockets` + `ws` | — | WebSocket-шлюз (онлайн-присутствие) |
 | `@nestjs/throttler` | — | Rate limiting (in-memory, по publicId / IP) |
 | [Helmet](https://helmetjs.github.io/) | — | HTTP-заголовки безопасности + CSP |
@@ -71,23 +72,24 @@ doodle-jump/
 │  │             │   │  480 px фикс │   │ ● онлайн-статус  │   │
 │  └─────────────┘   └──────┬───────┘   └────────┬─────────┘   │
 │                           │                    │             │
-│              ┌────────────▼────────────────────▼───────────┐ │
-│              │          GameApp (оркестратор)              │ │
-│              │  AuthApi ──── fetch ──► /api/*              │ │
-│              │  WsClient ─── ws:// ──► /ws                 │ │
-│              └─────────────────────────────────────────────┘ │
+│              ┌────────────▼────────────────────▼──────────┐  │
+│              │          GameApp (оркестратор)             │  │
+│              │  AuthApi ──── fetch + cookies ──► /api/*   │  │
+│              │  WsClient ─── ws + cookie ──► /ws          │  │
+│              └────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────────────┘
-                    │ HTTP+JWT          │ WebSocket+JWT
-┌───────────────────▼───────────────────▼──────────────────────┐
+         │ HTTP (cookie) + X-CSRF-Token   │ WebSocket (cookie)
+┌────────▼────────────────────────────────▼────────────────────┐
 │  NestJS Server (:3000)                                       │
 │                                                              │
 │  AuthController       UsersController    GameController      │
 │  POST /api/auth/reg   GET  /api/users/lb POST /api/game/ses  │
 │  POST /api/auth/login GET  /api/users/me PATCH /api/users/sc │
-│  GET  /api/auth/me    PATCH /users/name                      │
+│  POST /api/auth/logout PATCH /users/name                     │
+│  GET  /api/auth/me                                           │
 │                                                              │
 │  PresenceGateway (ws: /ws)                                   │
-│  ← auth → broadcast presence:online                          │
+│  ← cookie auth on Upgrade → broadcast presence:online        │
 │                                                              │
 │  AuthService ◄──► UsersService ◄──► GameService              │
 │                         ▼                                    │
@@ -102,9 +104,10 @@ doodle-jump/
 ### Принципы дизайна
 
 - **Монолитный деплой**: один процесс Node.js раздаёт и API, и WebSocket, и статику клиента.
-- **JWT без сессий**: сервер stateless. Токен хранится в `localStorage`, отправляется в `Authorization: Bearer` (HTTP) и в первом WS-сообщении `{ type: "auth", token }`.
+- **httpOnly-куки**: JWT хранится в `uncozy_access_token` (httpOnly, Secure, SameSite=Strict) — недоступен из JS, защищён от XSS. Срок жизни: 7 дней.
+- **CSRF-защита (double-submit cookie)**: сервер устанавливает `uncozy_csrf` (обычная, читается JS). Клиент присылает её значение как `X-CSRF-Token` заголовок. Атакующий с другого домена прочитать куку не может.
 - **Публичный ID**: внутренний `BigInt id` никогда не покидает сервер. Наружу отдаётся только `publicId` (UUID).
-- **WebSocket на том же порту**: используется HTTP Upgrade, отдельный порт не нужен — работает на Render.com и любых PaaS без дополнительных настроек.
+- **WebSocket на том же порту**: используется HTTP Upgrade. Браузер автоматически отправляет куки при подключении — отдельный auth-handshake не нужен.
 - **Онлайн = открытая вкладка**: факт подключённого WS-соединения считается онлайном; разрыв вкладки снимает статус мгновенно.
 
 ---
@@ -198,7 +201,7 @@ requestAnimationFrame → GameApp.loop(dt)
 - `document.documentElement.lang` — атрибут `lang` тега `<html>`
 - `meta[name="description"]` — описание страницы для поисковиков
 
-Язык сохраняется в `localStorage`.
+Язык сохраняется в `localStorage` под ключом `uncozy_lang`.
 
 ### SEO
 
@@ -214,7 +217,7 @@ requestAnimationFrame → GameApp.loop(dt)
 
 | Класс | Описание |
 |---|---|
-| `OverlayUI` | Все оверлеи: меню (с кнопкой «Выйти из аккаунта»), пауза, настройки, auth-форма |
+| `OverlayUI` | Все оверлеи: меню, пауза, настройки, auth-форма |
 | `LegendUI` | Левая панель (десктоп): управление, персонажи, все типы платформ и барьеров |
 | `LeaderboardUI` | Правая панель (десктоп): топ-10, живой счёт, `●` онлайн-статус игроков |
 | `GameApp` | Оркестратор: состояния, переходы, связь UI ↔ движок ↔ API ↔ WsClient |
@@ -223,15 +226,16 @@ requestAnimationFrame → GameApp.loop(dt)
 
 ## API
 
-Все эндпоинты с префиксом `/api`. Защищённые (🔒) требуют `Authorization: Bearer <JWT>`.
+Все эндпоинты с префиксом `/api`. Аутентификация осуществляется через httpOnly-куку `uncozy_access_token`, которую браузер отправляет автоматически. Мутирующие запросы (POST, PATCH) дополнительно требуют заголовок `X-CSRF-Token`.
 
 ### Аутентификация
 
 | Метод | Путь | Тело | Rate limit | Описание |
 |---|---|---|---|---|
-| `POST` | `/api/auth/register` | `{ username, email, password }` | 10 / час | Регистрация, возвращает `{ accessToken, user }` |
-| `POST` | `/api/auth/login` | `{ username, password }` | 10 / 15 мин | Вход, возвращает `{ accessToken, user }` |
-| `GET` | `/api/auth/me` | — 🔒 | 120 / мин | Свежие данные пользователя из БД |
+| `POST` | `/api/auth/register` | `{ username, email, password }` | 10 / час | Регистрация; устанавливает куки `uncozy_access_token` + `uncozy_csrf`, возвращает `{ user }` |
+| `POST` | `/api/auth/login` | `{ username, password }` | 10 / 15 мин | Вход; устанавливает куки, возвращает `{ user }` |
+| `POST` | `/api/auth/logout` | — | — | Выход; удаляет куки |
+| `GET` | `/api/auth/me` | — 🔒 | 120 / мин | Свежие данные пользователя; обновляет `uncozy_csrf` если пропал |
 
 ### Пользователи
 
@@ -246,19 +250,18 @@ requestAnimationFrame → GameApp.loop(dt)
 
 | Метод | Путь | Rate limit | Описание |
 |---|---|---|---|
-| `POST` | `/api/game/session` | 60 / час 🔒 | Выдать подписанный токен сессии перед стартом игры |
+| `POST` | `/api/game/session` | 60 / час 🔒 | Выдать подписанный одноразовый токен сессии перед стартом игры |
 
 ---
 
 ## WebSocket
 
-Шлюз доступен по пути `/ws` на том же порту, что и HTTP (Upgrade). Используется `ws`-адаптер NestJS.
+Шлюз доступен по пути `/ws` на том же порту, что и HTTP (Upgrade). Аутентификация происходит **при подключении** — сервер читает `uncozy_access_token` из заголовков HTTP Upgrade запроса. Никакого auth-сообщения не требуется.
 
 ### Протокол (клиент → сервер)
 
 | Тип | Поля | Описание |
 |---|---|---|
-| `auth` | `{ token }` | **Первое сообщение.** JWT-токен. Таймаут: 5 с (код 4001). Токены с `type: "game_session"` отклоняются (код 4003). |
 | `ping` | — | Клиентский keep-alive. |
 
 ### Протокол (сервер → клиент)
@@ -272,22 +275,43 @@ requestAnimationFrame → GameApp.loop(dt)
 
 | Код | Причина |
 |---|---|
-| 4001 | Таймаут аутентификации (5 с) |
-| 4002 | Первое сообщение не является `auth` |
-| 4003 | Невалидный / истёкший JWT или game_session токен |
+| 4003 | Отсутствует, невалидный или истёкший токен в куке; или game_session токен. Клиент не переподключается. |
 | 4029 | Rate limit превышен (30 сообщений / мин) |
 
 ### Переподключение клиента
 
-`WsClient.js` реализует экспоненциальный backoff: 2 с → 4 с → 8 с … до 30 с.
+`WsClient.js` реализует экспоненциальный backoff: 2 с → 4 с → 8 с … до 30 с. При коде 4003 переподключение не происходит (нет смысла без валидной сессии).
 
 ---
 
 ## Безопасность
 
+### Хранение токена: httpOnly Cookie
+
+JWT хранится в `uncozy_access_token` — httpOnly-куке, недоступной из JavaScript. Это исключает кражу токена через XSS.
+
+| Атрибут | Значение | Назначение |
+|---|---|---|
+| `HttpOnly` | `true` | JS не может прочитать |
+| `Secure` | `true` (prod) | Только HTTPS |
+| `SameSite` | `Strict` | Блокирует отправку куки с других доменов |
+| `Max-Age` | 7 дней | Срок жизни сессии |
+| `Path` | `/` | Применяется ко всему приложению |
+
+### CSRF-защита (Double-Submit Cookie)
+
+Сервер дополнительно устанавливает `uncozy_csrf` — обычную (не httpOnly) куку с тем же сроком жизни. Клиент читает её через `document.cookie` и отправляет как `X-CSRF-Token` заголовок. Сервер (`CsrfGuard`) сверяет заголовок со значением куки.
+
+Атакующий с другого домена не может прочитать куку (same-origin policy), следовательно, не может сформировать корректный заголовок.
+
+Применяется к: всем POST/PATCH запросам на авторизованные контроллеры (`UsersController`, `GameController`).
+Исключены: GET-запросы (безопасные), `login`, `register` (до аутентификации).
+
 ### Защита счёта (Game Session Token)
 
 Перед стартом игры клиент запрашивает одноразовый **game session token** (`POST /api/game/session`). Сервер выдаёт JWT с полями `type: "game_session"` + `nonce` (UUID). При сабмите счёта токен верифицируется и его nonce вносится в чёрный список (in-memory Map с TTL 30 мин). Повторная отправка тем же токеном вернёт 401.
+
+Токены с `type: "game_session"` отклоняются при WS-подключении (код 4003).
 
 ### Rate Limiting
 
@@ -315,11 +339,11 @@ worker-src:   'self' blob:
 object-src:   'none'
 ```
 
-`'unsafe-inline'` в `style-src` — намеренно: Three.js и игровой UI применяют инлайн-стили через JavaScript, `'unsafe-inline'` для стилей не создаёт XSS-вектора.
+`'unsafe-inline'` в `style-src` — намеренно: Three.js и игровой UI применяют инлайн-стили через JavaScript; для стилей этот флаг не создаёт XSS-вектора.
 
 ### Прочее
 
-- **bcrypt DoS**: `@MaxLength(72)` на всех полях пароля (ограничение bcrypt).
+- **bcrypt DoS**: `@MaxLength(72)` на всех полях пароля (ограничение алгоритма bcrypt).
 - **IDOR**: публичный `publicId` (UUID) вместо числового `id`. Пользователь может обращаться только к своим данным.
 - **WS rate limit**: 30 сообщений / мин на соединение, закрытие с кодом 4029 при превышении.
 
@@ -354,10 +378,10 @@ model User {
 │   │   ├── i18n.js                  # ru/en переводы + обновление document.title/lang/description
 │   │   ├── core/
 │   │   │   ├── GameApp.js           # главный оркестратор (состояния, auth, WS, game session)
-│   │   │   └── WsClient.js          # WebSocket-клиент (авторизация, reconnect, backoff)
+│   │   │   └── WsClient.js          # WebSocket-клиент (cookie auth, reconnect, backoff)
 │   │   ├── game/
 │   │   │   ├── GameWorld.js         # игровой цикл, физика, collision detection
-│   │   │   ├── constants.js         # параметры игры
+│   │   │   ├── constants.js         # параметры игры; localStorage-ключи с префиксом uncozy_
 │   │   │   └── entities/
 │   │   │       ├── Hero.js          # персонаж игрока (физика, скины, мигание)
 │   │   │       ├── PlatformManager.js
@@ -368,11 +392,11 @@ model User {
 │   │   │   ├── LegendUI.js          # левая панель (десктоп): легенда игры
 │   │   │   └── LeaderboardUI.js     # правая панель: топ-10, онлайн-статус
 │   │   ├── api/
-│   │   │   └── AuthApi.js           # fetch-обёртки для всех /api/* эндпоинтов + game session
+│   │   │   └── AuthApi.js           # fetch + credentials:include + X-CSRF-Token; нет хранения токена
 │   │   ├── input/
 │   │   │   └── InputController.js   # клавиатура + мышь + тач, Firefox-фикс, anti-stuck
 │   │   └── storage/
-│   │       └── ScoreStore.js        # localStorage: язык, скин, имя игрока
+│   │       └── ScoreStore.js        # localStorage (uncozy_*): язык, скин, имя игрока, очки
 │   ├── public/
 │   │   ├── favicon.svg              # pixel-art иконка (герой + платформа)
 │   │   └── icons.svg
@@ -382,25 +406,28 @@ model User {
 │
 ├── server/
 │   ├── src/
-│   │   ├── main.ts                  # bootstrap, WsAdapter, Helmet CSP, CORS, порт
+│   │   ├── main.ts                  # bootstrap, cookieParser, WsAdapter, Helmet CSP, CORS
 │   │   ├── app.module.ts            # ServeStatic, ThrottlerModule, глобальные модули
 │   │   ├── config/
 │   │   │   └── configuration.ts    # env → типизированный конфиг
 │   │   ├── common/
 │   │   │   └── guards/
-│   │   │       └── user-throttler.guard.ts  # троттлинг по publicId вместо IP
+│   │   │       ├── user-throttler.guard.ts  # троттлинг по publicId вместо IP
+│   │   │       └── csrf.guard.ts            # double-submit cookie CSRF-защита
 │   │   ├── prisma/
 │   │   │   ├── prisma.module.ts    # @Global()
 │   │   │   └── prisma.service.ts
 │   │   └── modules/
-│   │       ├── auth/               # JWT-стратегия, register/login, DTO с MaxLength
+│   │       ├── auth/               # JWT-стратегия (cookie), login/register/logout, DTO
+│   │       │   └── strategies/
+│   │       │       └── jwt.strategy.ts  # ExtractJwt.fromExtractors → req.cookies
 │   │       ├── users/              # профиль, рекорды, лидерборд
 │   │       ├── game/               # game session token: выдача + nonce blacklist
 │   │       │   ├── game.controller.ts
 │   │       │   ├── game.service.ts
 │   │       │   └── game.module.ts
 │   │       └── presence/           # WebSocket-шлюз онлайн-статуса
-│   │           ├── presence.gateway.ts  # rate limit 30msg/min, game_session rejection
+│   │           ├── presence.gateway.ts  # cookie auth на Upgrade, rate limit 30msg/min
 │   │           └── presence.module.ts
 │   ├── prisma/
 │   │   ├── schema.prisma
@@ -442,6 +469,7 @@ cp server/.env.example server/.env
 DATABASE_URL=postgresql://user:password@host:5432/dbname
 JWT_SECRET=your-secret-key-min-32-chars
 PORT=3000
+NODE_ENV=development
 ```
 
 ### 3. Применить миграции Prisma
@@ -468,7 +496,9 @@ npm run dev --prefix client
 
 Открыть: [http://localhost:5173](http://localhost:5173)
 
-> Vite проксирует `/api/*` → `localhost:3000` (HTTP) и `/ws` → `localhost:3000` (WebSocket Upgrade). Настройка в `client/vite.config.js`.
+> Vite проксирует `/api/*` → `localhost:3000` (HTTP) и `/ws` → `localhost:3000` (WebSocket Upgrade). Куки, выставленные сервером, возвращаются браузеру через прокси и отправляются обратно на следующих запросах — в dev-режиме всё работает прозрачно.
+
+> В dev-режиме `NODE_ENV=development` куки не требуют флага `Secure` (HTTP), что необходимо для работы на localhost.
 
 ### Открыть с телефона в той же сети
 
@@ -502,12 +532,12 @@ npm start
 
 ### Деплой на Render.com / Railway / Fly.io
 
-1. Установить переменные окружения в настройках платформы (`DATABASE_URL`, `JWT_SECRET`, `PORT`).
+1. Установить переменные окружения (`DATABASE_URL`, `JWT_SECRET`, `PORT`, `NODE_ENV=production`).
 2. Build command: `npm run build`
 3. Start command: `npm start`
 4. Применить миграции: добавить `npx prisma migrate deploy` в build command.
 
-> WebSocket работает без дополнительных настроек — тот же порт, что и HTTP.
+> В production обязательно установить `NODE_ENV=production` — от этого зависят флаги `Secure` и `SameSite` на куках.
 
 ### Деплой на VPS (systemd)
 
@@ -543,8 +573,8 @@ systemctl start uncozy
 |---|---|---|---|
 | `DATABASE_URL` | ✅ | — | PostgreSQL connection string |
 | `JWT_SECRET` | ✅ | — | Секрет для подписи JWT (мин. 32 символа) |
+| `NODE_ENV` | ✅ | — | `production` включает `Secure` + `SameSite=Strict` на куках |
 | `PORT` | ❌ | `3000` | Порт HTTP + WebSocket сервера |
-| `JWT_EXPIRES_IN` | ❌ | `30d` | Время жизни токена |
 
 ---
 

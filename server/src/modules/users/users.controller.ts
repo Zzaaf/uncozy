@@ -6,9 +6,10 @@ import { GameService } from '../game/game.service';
 import { SubmitScoreDto } from './dto/submit-score.dto';
 import { UpdateUsernameDto } from './dto/update-username.dto';
 import { UserThrottlerGuard } from '../../common/guards/user-throttler.guard';
+import { CsrfGuard } from '../../common/guards/csrf.guard';
 
 @Controller('api/users')
-@UseGuards(AuthGuard('jwt'), UserThrottlerGuard)
+@UseGuards(AuthGuard('jwt'), CsrfGuard, UserThrottlerGuard)
 export class UsersController {
   constructor(
     private readonly users: UsersService,
