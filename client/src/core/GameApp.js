@@ -201,8 +201,9 @@ export class GameApp {
     this._goBack();
   }
 
-  startGame() {
-    this._backTarget = GAME_STATES.MENU;
+  async startGame() {
+    this._backTarget    = GAME_STATES.MENU;
+    this._sessionToken  = await AuthApi.startGameSession();
     this.lives = INITIAL_LIVES;
     this.updateHearts();
     this.gameWorld.reset(this.skinId);
@@ -272,7 +273,8 @@ export class GameApp {
     const score = this.gameWorld.score;
     const saved = this.scoreStore.saveScore(score, this.playerName);
     if (!saved.length) this.scoreStore.saveScore(0, this.playerName);
-    AuthApi.submitScore(score);
+    AuthApi.submitScore(score, this._sessionToken);
+    this._sessionToken = null;
     this._showGameOverBanner(() => this.ui.showGameOver(score));
   }
 

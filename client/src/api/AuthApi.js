@@ -71,11 +71,10 @@ export const AuthApi = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(Array.isArray(data.message) ? data.message.join(', ') : (data.message || 'Failed to update username'));
-    // Update cached user
     const user = this.getUser();
     if (user) {
       user.username = username;
-      localStorage.setItem('doodle_jump_user', JSON.stringify(user));
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
     }
     return data;
   },
@@ -94,9 +93,24 @@ export const AuthApi = {
     }
   },
 
-  async submitScore(score) {
+  async startGameSession() {
     const token = this.getToken();
-    if (!token) return;
+    if (!token) return null;
+    try {
+      const res = await fetch('/api/game/session', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      return (await res.json()).sessionToken ?? null;
+    } catch {
+      return null;
+    }
+  },
+
+  async submitScore(score, sessionToken) {
+    const token = this.getToken();
+    if (!token || !sessionToken) return;
     try {
       await fetch('/api/users/me/score', {
         method: 'PATCH',
@@ -104,7 +118,7 @@ export const AuthApi = {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ score: Math.floor(score) }),
+        body: JSON.stringify({ score: Math.floor(score), sessionToken }),
       });
     } catch { /* silent — offline or network error */ }
   },

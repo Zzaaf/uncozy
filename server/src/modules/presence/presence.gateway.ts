@@ -10,11 +10,16 @@ import { ConfigService } from '@nestjs/config';
 import type { IncomingMessage } from 'http';
 import type WebSocket from 'ws';
 
+const WS_MSG_LIMIT    = 30;   // max messages per window
+const WS_MSG_WINDOW   = 60_000; // 1 minute window
+
 interface AuthedSocket extends WebSocket {
   publicId?: string;
   username?: string;
   isAuthed?: boolean;
   pingTimer?: ReturnType<typeof setInterval>;
+  msgCount?: number;
+  msgWindowStart?: number;
 }
 
 export type WsMsg =
@@ -36,13 +41,28 @@ export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect
   ) {}
 
   handleConnection(socket: AuthedSocket, _req: IncomingMessage) {
-    socket.isAuthed = false;
+    socket.isAuthed       = false;
+    socket.msgCount       = 0;
+    socket.msgWindowStart = Date.now();
 
     const authTimeout = setTimeout(() => {
       if (!socket.isAuthed) socket.close(4001, 'auth_timeout');
     }, 5000);
 
     socket.on('message', (raw: Buffer | string) => {
+      // ── Rate limit ──────────────────────────────────────────────
+      const now = Date.now();
+      if (now - (socket.msgWindowStart ?? 0) > WS_MSG_WINDOW) {
+        socket.msgCount       = 0;
+        socket.msgWindowStart = now;
+      }
+      socket.msgCount = (socket.msgCount ?? 0) + 1;
+      if (socket.msgCount > WS_MSG_LIMIT) {
+        socket.close(4029, 'rate_limited');
+        return;
+      }
+
+      // ── Parse ────────────────────────────────────────────────────
       let msg: WsMsg;
       try {
         msg = JSON.parse(raw.toString());
@@ -50,6 +70,7 @@ export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect
         return;
       }
 
+      // ── Auth handshake ───────────────────────────────────────────
       if (!socket.isAuthed) {
         if (msg.type !== 'auth') return socket.close(4002, 'expected_auth');
         clearTimeout(authTimeout);
@@ -63,9 +84,15 @@ export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect
           return socket.close(4003, 'invalid_token');
         }
 
-        socket.publicId = payload.sub;
-        socket.username = payload.username;
-        socket.isAuthed = true;
+        // Reject game-session tokens trying to auth as presence
+        const raw_payload = payload as any;
+        if (raw_payload.type === 'game_session') {
+          return socket.close(4003, 'invalid_token');
+        }
+
+        socket.publicId  = payload.sub;
+        socket.username  = payload.username;
+        socket.isAuthed  = true;
 
         this.online.set(payload.sub, socket);
 
@@ -84,9 +111,7 @@ export class PresenceGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   handleDisconnect(socket: AuthedSocket) {
-    if (socket.publicId) {
-      this.online.delete(socket.publicId);
-    }
+    if (socket.publicId) this.online.delete(socket.publicId);
     if (socket.pingTimer) clearInterval(socket.pingTimer);
     this.broadcastOnline();
   }

@@ -9,16 +9,20 @@ export class InputController {
     this._shootQueued = false;
     this._tapStart   = null;
 
-    this.onKeyDown      = this.onKeyDown.bind(this);
-    this.onKeyUp        = this.onKeyUp.bind(this);
-    this.onPointerDown  = this.onPointerDown.bind(this);
-    this.onPointerMove  = this.onPointerMove.bind(this);
-    this.onPointerUp    = this.onPointerUp.bind(this);
+    this.onKeyDown          = this.onKeyDown.bind(this);
+    this.onKeyUp            = this.onKeyUp.bind(this);
+    this.onWindowBlur       = this.onWindowBlur.bind(this);
+    this.onVisibilityChange = this.onVisibilityChange.bind(this);
+    this.onPointerDown      = this.onPointerDown.bind(this);
+    this.onPointerMove      = this.onPointerMove.bind(this);
+    this.onPointerUp        = this.onPointerUp.bind(this);
   }
 
   attach() {
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup',   this.onKeyUp);
+    window.addEventListener('blur',    this.onWindowBlur);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
     this.targetElement.addEventListener('pointerdown', this.onPointerDown);
     this.targetElement.addEventListener('pointermove', this.onPointerMove);
     window.addEventListener('pointerup', this.onPointerUp);
@@ -27,6 +31,8 @@ export class InputController {
   detach() {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup',   this.onKeyUp);
+    window.removeEventListener('blur',    this.onWindowBlur);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
     this.targetElement.removeEventListener('pointerdown', this.onPointerDown);
     this.targetElement.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
@@ -46,16 +52,40 @@ export class InputController {
     return fired;
   }
 
+  static _GAME_KEYS = new Set([
+    'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+    'KeyA', 'KeyD', 'KeyW', 'KeyS', 'Space',
+  ]);
+
   onKeyDown(event) {
+    const tag = document.activeElement?.tagName;
+    const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+      || document.activeElement?.isContentEditable;
+    if (!isTyping && InputController._GAME_KEYS.has(event.code)) {
+      event.preventDefault();
+    }
     this.pressedKeys.add(event.code);
     if (event.code === 'Space' || event.code === 'ArrowUp') {
-      event.preventDefault();
       this._shootQueued = true;
     }
   }
 
   onKeyUp(event) {
     this.pressedKeys.delete(event.code);
+  }
+
+  onWindowBlur() {
+    this.pressedKeys.clear();
+    this.pointerActive = false;
+    this.pointerX = 0;
+  }
+
+  onVisibilityChange() {
+    if (document.hidden) {
+      this.pressedKeys.clear();
+      this.pointerActive = false;
+      this.pointerX = 0;
+    }
   }
 
   onPointerDown(event) {
