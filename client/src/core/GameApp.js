@@ -53,6 +53,7 @@ export class GameApp {
       'confirm-restart': () => this.startGame(),
       'cancel-restart':  () => this.pauseGame(),
       scores:            () => this.showScores(),
+      achievements:      () => this.showAchievements(),
       settings:          () => this.showSettings(),
       'save-settings':   (name, skinId, lang) => this.saveSettings(name, skinId, lang),
       back:              () => this._goBack(),
@@ -169,6 +170,13 @@ export class GameApp {
     }
   }
 
+  async showAchievements() {
+    this.state = GAME_STATES.SCORES; // reuse scores state for back-nav
+    this.ui.showAchievements([], this.lang);
+    const data = await AuthApi.getAchievements();
+    this.ui.showAchievements(data, this.lang);
+  }
+
   showSettings() {
     this.state = GAME_STATES.SETTINGS;
     this.ui.showSettings(this.playerName, this.skinId, this.lang);
@@ -265,16 +273,28 @@ export class GameApp {
     this.rafId = requestAnimationFrame(this.loop);
   }
 
-  finishRun() {
+  async finishRun() {
     this.state       = GAME_STATES.GAME_OVER;
     this._backTarget = GAME_STATES.MENU;
     this.leaderboardUI?.setLiveScore(0, false);
     const score = this.gameWorld.score;
+    const stats = this.gameWorld.getRunStats();
     const saved = this.scoreStore.saveScore(score, this.playerName);
     if (!saved.length) this.scoreStore.saveScore(0, this.playerName);
-    AuthApi.submitScore(score, this._sessionToken);
+    const result = await AuthApi.submitScore(score, this._sessionToken, stats);
     this._sessionToken = null;
+    if (result?.newAchievements?.length) {
+      this._queueAchievementToasts(result.newAchievements);
+    }
     this._showGameOverBanner(() => this.ui.showGameOver(score));
+  }
+
+  _queueAchievementToasts(achievements) {
+    let delay = 500;
+    for (const a of achievements) {
+      setTimeout(() => this.ui.showAchievementToast(a, this.lang), delay);
+      delay += 3500;
+    }
   }
 
   _showGameOverBanner(onDone) {

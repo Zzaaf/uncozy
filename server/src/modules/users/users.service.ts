@@ -1,7 +1,8 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
+import { AchievementsService, type GameStats } from '../achievements/achievements.service';
 
 const PUBLIC_SELECT = {
   publicId: true,
@@ -14,7 +15,11 @@ const PUBLIC_SELECT = {
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => AchievementsService))
+    private readonly achievementsSvc: AchievementsService,
+  ) {}
 
   findByPublicId(publicId: string) {
     return this.prisma.user.findUnique({ where: { publicId }, select: PUBLIC_SELECT });
@@ -28,17 +33,33 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { username } });
   }
 
-  async submitScore(publicId: string, score: number) {
+  async submitScore(publicId: string, score: number, stats: GameStats = {}) {
     const user = await this.prisma.user.findUnique({ where: { publicId } });
     if (!user) return null;
-    return this.prisma.user.update({
+
+    const updated = await this.prisma.user.update({
       where: { publicId },
       data: {
         gamesPlayed: { increment: 1 },
         highScore: score > user.highScore ? score : undefined,
+        totalKills:        stats.totalKills        ? { increment: stats.totalKills }        : undefined,
+        crawlersKilled:    stats.crawlersKilled    ? { increment: stats.crawlersKilled }    : undefined,
+        flyersKilled:      stats.flyersKilled      ? { increment: stats.flyersKilled }      : undefined,
+        shootersKilled:    stats.shootersKilled    ? { increment: stats.shootersKilled }    : undefined,
+        droppersKilled:    stats.droppersKilled    ? { increment: stats.droppersKilled }    : undefined,
+        barriersDestroyed: stats.barriersDestroyed ? { increment: stats.barriersDestroyed } : undefined,
+        maxLevelReached:   stats.maxLevelReached && stats.maxLevelReached > user.maxLevelReached
+          ? stats.maxLevelReached
+          : undefined,
       },
       select: PUBLIC_SELECT,
     });
+
+    const newAchievements = this.achievementsSvc
+      ? await this.achievementsSvc.checkAndUnlock(publicId, { ...stats, score })
+      : [];
+
+    return { ...updated, newAchievements };
   }
 
   async updateUsername(publicId: string, newUsername: string) {

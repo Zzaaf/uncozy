@@ -44,6 +44,7 @@ export class UsersController {
     @Body(new ValidationPipe({ whitelist: true })) dto: SubmitScoreDto,
   ) {
     this.game.consumeSessionToken(dto.sessionToken, req.user.publicId);
-    return this.users.submitScore(req.user.publicId, dto.score);
+    const { sessionToken, score, ...stats } = dto;
+    return this.users.submitScore(req.user.publicId, score, stats);
   }
 }

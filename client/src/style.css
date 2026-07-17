@@ -1297,6 +1297,141 @@ button[data-action="restart"]:hover {
   line-height: 2;
 }
 
+/* ── Achievements panel ───────────────────────── */
+.panel--achievements {
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.ach-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px 2px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 229, 255, 0.3) transparent;
+}
+
+.ach-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  transition: box-shadow 0.2s;
+}
+
+.ach-card--unlocked {
+  border-color: rgba(255, 221, 0, 0.4);
+  background: rgba(255, 221, 0, 0.06);
+  box-shadow:
+    0 0 8px rgba(255, 221, 0, 0.15),
+    inset 0 0 12px rgba(255, 221, 0, 0.05);
+  animation: ach-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes ach-shimmer {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 221, 0, 0.15), inset 0 0 12px rgba(255, 221, 0, 0.05); }
+  50%       { box-shadow: 0 0 14px rgba(255, 221, 0, 0.28), inset 0 0 18px rgba(255, 221, 0, 0.09); }
+}
+
+.ach-card--locked {
+  filter: grayscale(1) brightness(0.5);
+}
+
+.ach-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ach-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+}
+
+.ach-name {
+  font-size: 8px;
+  color: var(--px-yellow);
+  letter-spacing: 0.5px;
+}
+
+.ach-desc {
+  font-size: 6px;
+  color: rgba(180, 200, 220, 0.75);
+  line-height: 1.7;
+  letter-spacing: 0.3px;
+}
+
+.ach-pts {
+  font-size: 6px;
+  color: var(--px-green);
+  letter-spacing: 0.5px;
+}
+
+/* ── Achievement in-game toast ───────────────── */
+.ach-toast {
+  position: fixed;
+  top: 16px;
+  right: -320px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--px-panel);
+  border: 2px solid var(--px-yellow);
+  box-shadow: 0 0 16px rgba(255, 221, 0, 0.4), 0 4px 12px rgba(0,0,0,0.6);
+  font-family: 'Press Start 2P', monospace;
+  transition: right 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s;
+  opacity: 0;
+  pointer-events: none;
+  max-width: 300px;
+}
+
+.ach-toast--visible {
+  right: 16px;
+  opacity: 1;
+}
+
+.ach-toast-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ach-toast-text {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ach-toast-label {
+  font-size: 6px;
+  color: var(--px-cyan);
+  letter-spacing: 1px;
+}
+
+.ach-toast-name {
+  font-size: 8px;
+  color: var(--px-yellow);
+  letter-spacing: 0.5px;
+  line-height: 1.5;
+}
+
 /* ── Mobile ──────────────────────────────────── */
 @media (max-width: 600px) {
   #game-shell {

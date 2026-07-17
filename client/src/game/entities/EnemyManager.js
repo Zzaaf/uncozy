@@ -129,6 +129,8 @@ export class EnemyManager {
     this._flyerTimer    = 4;
     this._dropperTimer  = 7;
     this._time = 0;
+    // Kill stats for achievement tracking
+    this.killStats = { total: 0, crawler: 0, flyer: 0, shooter: 0, dropper: 0 };
   }
 
   reset() {
@@ -141,6 +143,7 @@ export class EnemyManager {
     this._flyerTimer    = 10;
     this._dropperTimer  = 12;
     this._time = 0;
+    this.killStats = { total: 0, crawler: 0, flyer: 0, shooter: 0, dropper: 0 };
   }
 
   update(dt, cameraY, cameraTop, level) {
@@ -226,6 +229,8 @@ export class EnemyManager {
           projY2 >= e.y - hr && projY1 <= e.y + hr) {
         this.scene.remove(e.mesh);
         this.enemies.splice(i, 1);
+        this.killStats.total++;
+        this.killStats[e.type] = (this.killStats[e.type] ?? 0) + 1;
         return true;
       }
     }

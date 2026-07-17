@@ -101,19 +101,29 @@ export const AuthApi = {
     }
   },
 
-  async submitScore(score, sessionToken) {
-    if (!sessionToken) return;
+  async submitScore(score, sessionToken, stats = {}) {
+    if (!sessionToken) return null;
     try {
-      await fetch('/api/users/me/score', {
+      const res = await fetch('/api/users/me/score', {
         method: 'PATCH',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           ...csrfHeaders(),
         },
-        body: JSON.stringify({ score: Math.floor(score), sessionToken }),
+        body: JSON.stringify({ score: Math.floor(score), sessionToken, ...stats }),
       });
-    } catch { /* silent */ }
+      if (!res.ok) return null;
+      return (await res.json());
+    } catch { return null; }
+  },
+
+  async getAchievements() {
+    try {
+      const res = await fetch('/api/achievements', { credentials: 'include' });
+      if (!res.ok) return [];
+      return res.json();
+    } catch { return []; }
   },
 
   _persistUser(user) {

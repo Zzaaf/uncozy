@@ -117,6 +117,19 @@ export class GameWorld {
 
   get level() { return this._level; }
 
+  getRunStats() {
+    const k = this.enemyManager.killStats;
+    return {
+      totalKills:        k.total,
+      crawlersKilled:    k.crawler,
+      flyersKilled:      k.flyer,
+      shootersKilled:    k.shooter,
+      droppersKilled:    k.dropper,
+      barriersDestroyed: this.barrierManager.barriersDestroyed,
+      maxLevelReached:   this._level,
+    };
+  }
+
   resize() {
     const width  = this.canvasHost.clientWidth  || 1;
     const height = this.canvasHost.clientHeight || 1;

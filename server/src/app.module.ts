@@ -10,6 +10,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { PresenceModule } from './modules/presence/presence.module';
 import { GameModule } from './modules/game/game.module';
+import { AchievementsModule } from './modules/achievements/achievements.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { GameModule } from './modules/game/game.module';
     AuthModule,
     PresenceModule,
     GameModule,
+    AchievementsModule,
   ],
   providers: [
     // IP-based global throttle guard for all routes

@@ -39,6 +39,145 @@ const SKIN_PREVIEWS = [
   </svg>`,
 ];
 
+// Pixel-art 32×32 SVG icons for each achievement
+const _svg = (content, accent = '#ffdd00') =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="40" height="40" style="image-rendering:pixelated">${content}</svg>`;
+
+const ACH_ICONS = {
+  // 🟢 FIRST_JUMP — doodler jumping
+  FIRST_JUMP: _svg(`
+    <rect x="12" y="2"  width="8"  height="8"  fill="#ffdd00"/>
+    <rect x="10" y="10" width="12" height="10" fill="#ffdd00"/>
+    <rect x="10" y="13" width="12" height="4"  fill="#ff006e"/>
+    <rect x="14" y="11" width="4"  height="3"  fill="#00e5ff"/>
+    <rect x="6"  y="22" width="4"  height="6"  fill="#ffdd00"/>
+    <rect x="22" y="22" width="4"  height="6"  fill="#ffdd00"/>
+    <rect x="8"  y="28" width="16" height="2"  fill="#00ff88" opacity="0.6"/>
+    <rect x="10" y="30" width="12" height="2"  fill="#00ff88" opacity="0.3"/>
+  `),
+  // 🔴 FIRST_BLOOD — red bullet hitting enemy
+  FIRST_BLOOD: _svg(`
+    <rect x="14" y="2"  width="4"  height="10" fill="#ffdd00"/>
+    <rect x="13" y="0"  width="6"  height="3"  fill="#ffdd00"/>
+    <rect x="8"  y="14" width="16" height="10" fill="#ff2244"/>
+    <rect x="6"  y="16" width="6"  height="6"  fill="#cc1122"/>
+    <rect x="20" y="16" width="6"  height="6"  fill="#cc1122"/>
+    <rect x="10" y="15" width="4"  height="4"  fill="#ffffff"/>
+    <rect x="18" y="15" width="4"  height="4"  fill="#ffffff"/>
+    <rect x="11" y="16" width="2"  height="2"  fill="#110000"/>
+    <rect x="19" y="16" width="2"  height="2"  fill="#110000"/>
+    <rect x="12" y="24" width="8"  height="4"  fill="#ff2244"/>
+    <rect x="14" y="26" width="4"  height="6"  fill="#aa0022"/>
+  `),
+  // 🟠 HUNTER — crosshair with 50 bullets
+  HUNTER: _svg(`
+    <rect x="15" y="2"  width="2"  height="28" fill="#00e5ff" opacity="0.5"/>
+    <rect x="2"  y="15" width="28" height="2"  fill="#00e5ff" opacity="0.5"/>
+    <rect x="11" y="11" width="10" height="10" fill="none" stroke="#00e5ff" stroke-width="2"/>
+    <rect x="14" y="14" width="4"  height="4"  fill="#ff006e"/>
+    <rect x="15" y="15" width="2"  height="2"  fill="#ffffff"/>
+    <rect x="2"  y="2"  width="4"  height="4"  fill="#00e5ff"/>
+    <rect x="26" y="2"  width="4"  height="4"  fill="#00e5ff"/>
+    <rect x="2"  y="26" width="4"  height="4"  fill="#00e5ff"/>
+    <rect x="26" y="26" width="4"  height="4"  fill="#00e5ff"/>
+  `),
+  // 🔴 CRAWLER_SLAYER — red crab with X
+  CRAWLER_SLAYER: _svg(`
+    <rect x="6"  y="10" width="20" height="10" fill="#ff2244"/>
+    <rect x="2"  y="12" width="6"  height="6"  fill="#cc1122"/>
+    <rect x="24" y="12" width="6"  height="6"  fill="#cc1122"/>
+    <rect x="8"  y="8"  width="4"  height="4"  fill="#ffffff"/>
+    <rect x="20" y="8"  width="4"  height="4"  fill="#ffffff"/>
+    <rect x="9"  y="9"  width="2"  height="2"  fill="#110000"/>
+    <rect x="21" y="9"  width="2"  height="2"  fill="#110000"/>
+    <rect x="10" y="20" width="4"  height="4"  fill="#aa0022"/>
+    <rect x="18" y="20" width="4"  height="4"  fill="#aa0022"/>
+    <rect x="6"  y="4"  width="4"  height="4"  fill="#ffdd00"/>
+    <rect x="22" y="4"  width="4"  height="4"  fill="#ffdd00"/>
+    <rect x="4"  y="6"  width="4"  height="2"  fill="#ffdd00"/>
+    <rect x="24" y="6"  width="4"  height="2"  fill="#ffdd00"/>
+  `),
+  // 🔵 VETERAN — shield with star
+  VETERAN: _svg(`
+    <rect x="8"  y="2"  width="16" height="4"  fill="#6677aa"/>
+    <rect x="4"  y="6"  width="24" height="18" fill="#6677aa"/>
+    <rect x="6"  y="24" width="20" height="4"  fill="#6677aa"/>
+    <rect x="10" y="28" width="12" height="2"  fill="#6677aa"/>
+    <rect x="13" y="30" width="6"  height="2"  fill="#6677aa"/>
+    <rect x="14" y="10" width="4"  height="10" fill="#ffdd00"/>
+    <rect x="10" y="14" width="12" height="4"  fill="#ffdd00"/>
+    <rect x="12" y="11" width="8"  height="2"  fill="#ffdd00"/>
+    <rect x="12" y="19" width="8"  height="2"  fill="#ffdd00"/>
+  `),
+  // 🟣 SURVIVOR — lightning bolt at level 7
+  SURVIVOR: _svg(`
+    <rect x="16" y="2"  width="8"  height="12" fill="#ffdd00"/>
+    <rect x="10" y="14" width="12" height="10" fill="#ffdd00"/>
+    <rect x="8"  y="18" width="14" height="12" fill="#ffdd00"/>
+    <rect x="16" y="2"  width="2"  height="14" fill="#ffffff" opacity="0.4"/>
+    <rect x="2"  y="26" width="6"  height="4"  fill="#00e5ff" opacity="0.6"/>
+    <rect x="24" y="26" width="6"  height="4"  fill="#00e5ff" opacity="0.6"/>
+  `),
+  // 🟦 SNIPER — UFO/shooter with target
+  SNIPER: _svg(`
+    <rect x="6"  y="14" width="20" height="4"  fill="#00ccbb"/>
+    <rect x="10" y="10" width="12" height="8"  fill="#aa44ff"/>
+    <rect x="13" y="8"  width="6"  height="4"  fill="#88ffff"/>
+    <rect x="8"  y="16" width="2"  height="4"  fill="#007766"/>
+    <rect x="15" y="16" width="2"  height="4"  fill="#007766"/>
+    <rect x="22" y="16" width="2"  height="4"  fill="#007766"/>
+    <rect x="14" y="22" width="4"  height="8"  fill="#ffdd00"/>
+    <rect x="12" y="28" width="8"  height="2"  fill="#ff006e"/>
+    <rect x="4"  y="12" width="24" height="2"  fill="#00ffee" opacity="0.5"/>
+  `),
+  // 🟠 GHOST_HUNTER — orange spike ball dropper
+  GHOST_HUNTER: _svg(`
+    <rect x="10" y="10" width="12" height="12" fill="#ff6600"/>
+    <rect x="6"  y="14" width="4"  height="4"  fill="#ff4400"/>
+    <rect x="22" y="14" width="4"  height="4"  fill="#ff4400"/>
+    <rect x="14" y="6"  width="4"  height="4"  fill="#ff4400"/>
+    <rect x="14" y="22" width="4"  height="4"  fill="#ff4400"/>
+    <rect x="8"  y="8"  width="4"  height="4"  fill="#dd3300"/>
+    <rect x="20" y="8"  width="4"  height="4"  fill="#dd3300"/>
+    <rect x="8"  y="20" width="4"  height="4"  fill="#dd3300"/>
+    <rect x="20" y="20" width="4"  height="4"  fill="#dd3300"/>
+    <rect x="13" y="12" width="3"  height="3"  fill="#ffff00"/>
+    <rect x="17" y="12" width="3"  height="3"  fill="#ffff00"/>
+    <rect x="14" y="16" width="4"  height="2"  fill="#ffffff"/>
+  `),
+  // 🟥 WALL_BREAKER — breaking wall / barrier cubes
+  WALL_BREAKER: _svg(`
+    <rect x="2"  y="12" width="28" height="8"  fill="#ff2244"/>
+    <rect x="2"  y="12" width="6"  height="8"  fill="#cc1122"/>
+    <rect x="10" y="12" width="6"  height="8"  fill="#cc1122"/>
+    <rect x="18" y="12" width="6"  height="8"  fill="#cc1122"/>
+    <rect x="2"  y="12" width="28" height="1"  fill="#ff6677" opacity="0.5"/>
+    <rect x="2"  y="19" width="28" height="1"  fill="#991122" opacity="0.5"/>
+    <rect x="10" y="4"  width="4"  height="4"  fill="#ffdd00" opacity="0.8"/>
+    <rect x="18" y="2"  width="4"  height="6"  fill="#ffdd00" opacity="0.6"/>
+    <rect x="8"  y="22" width="6"  height="6"  fill="#ff8800" opacity="0.7"/>
+    <rect x="20" y="24" width="4"  height="4"  fill="#ff8800" opacity="0.5"/>
+    <rect x="14" y="8"  width="6"  height="4"  fill="#ffffff" opacity="0.4"/>
+  `),
+  // 🌟 LEGEND — star / trophy
+  LEGEND: _svg(`
+    <rect x="14" y="2"  width="4"  height="8"  fill="#ffdd00"/>
+    <rect x="10" y="6"  width="12" height="4"  fill="#ffdd00"/>
+    <rect x="8"  y="10" width="16" height="14" fill="#ffdd00"/>
+    <rect x="10" y="24" width="12" height="4"  fill="#ffdd00"/>
+    <rect x="8"  y="28" width="16" height="2"  fill="#ffaa00"/>
+    <rect x="6"  y="30" width="20" height="2"  fill="#ffaa00"/>
+    <rect x="14" y="4"  width="2"  height="4"  fill="#ffffff" opacity="0.5"/>
+    <rect x="14" y="12" width="4"  height="6"  fill="#ff8800"/>
+    <rect x="12" y="14" width="8"  height="4"  fill="#ff8800"/>
+    <rect x="2"  y="10" width="6"  height="4"  fill="#ffdd00"/>
+    <rect x="24" y="10" width="6"  height="4"  fill="#ffdd00"/>
+    <rect x="2"  y="16" width="8"  height="4"  fill="#ffdd00"/>
+    <rect x="22" y="16" width="8"  height="4"  fill="#ffdd00"/>
+  `),
+  DEFAULT: _svg(`<rect x="8" y="8" width="16" height="16" fill="#ffdd00"/>`),
+};
+
 export class OverlayUI {
   constructor(root, callbacks) {
     this.root = root;
@@ -60,10 +199,11 @@ export class OverlayUI {
         <p class="panel-subtitle">${t('subtitle')}</p>
         <p class="player-name">${t('player_prefix')} ${this.escapeHtml(playerName)} ${t('player_suffix')}</p>
         <div class="actions">
-          ${this._btn('start',    '🎮', 'menu_start')}
-          ${this._btn('scores',   '🏆', 'menu_scores')}
-          ${this._btn('settings', '⚙️', 'menu_settings')}
-          ${this._btn('logout',   '🚪', 'auth_logout', 'button', 'btn--danger')}
+          ${this._btn('start',        '🎮', 'menu_start')}
+          ${this._btn('scores',       '🏆', 'menu_scores')}
+          ${this._btn('achievements', '🏅', 'menu_achievements')}
+          ${this._btn('settings',     '⚙️', 'menu_settings')}
+          ${this._btn('logout',       '🚪', 'auth_logout', 'button', 'btn--danger')}
         </div>
         <p class="hint">${t('menu_hint')}</p>
       </div>
@@ -249,6 +389,61 @@ export class OverlayUI {
     `;
     this._bindAuthTabs();
     this._bindAuthForm(isLogin);
+  }
+
+  showAchievements(achievements, lang = 'ru') {
+    const isEn = lang === 'en';
+    const cards = achievements.length
+      ? achievements.map(a => {
+          const name = isEn ? a.nameEn : a.nameRu;
+          const desc = isEn ? a.descEn : a.descRu;
+          const icon = ACH_ICONS[a.code] ?? ACH_ICONS.DEFAULT;
+          const cls  = a.unlocked ? 'ach-card ach-card--unlocked' : 'ach-card ach-card--locked';
+          const pts  = isEn ? `${a.points} pts` : `${a.points} оч.`;
+          return `
+            <div class="${cls}">
+              <div class="ach-icon">${icon}</div>
+              <div class="ach-info">
+                <div class="ach-name">${this.escapeHtml(name)}</div>
+                <div class="ach-desc">${this.escapeHtml(desc)}</div>
+                <div class="ach-pts">${pts}</div>
+              </div>
+            </div>`;
+        }).join('')
+      : `<p class="scores-empty">${t('achievements_empty')}</p>`;
+
+    this.root.innerHTML = `
+      <div class="panel panel--achievements">
+        <h2>${t('achievements_title')}</h2>
+        <div class="ach-grid">${cards}</div>
+        <div class="actions">
+          ${this._btn('back', '◀️', 'back')}
+        </div>
+      </div>
+    `;
+    this.bindButtons();
+  }
+
+  showAchievementToast(achievement, lang = 'ru') {
+    const isEn = lang === 'en';
+    const name = isEn ? achievement.nameEn : achievement.nameRu;
+    const icon = ACH_ICONS[achievement.code] ?? ACH_ICONS.DEFAULT;
+    const label = isEn ? 'ACHIEVEMENT UNLOCKED' : 'ДОСТИЖЕНИЕ ПОЛУЧЕНО';
+
+    const toast = document.createElement('div');
+    toast.className = 'ach-toast';
+    toast.innerHTML = `
+      <div class="ach-toast-icon">${icon}</div>
+      <div class="ach-toast-text">
+        <div class="ach-toast-label">${label}</div>
+        <div class="ach-toast-name">${this.escapeHtml(name)}</div>
+      </div>`;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('ach-toast--visible'));
+    setTimeout(() => {
+      toast.classList.remove('ach-toast--visible');
+      toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+    }, 3000);
   }
 
   showAuthError(msg) {

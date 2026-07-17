@@ -65,6 +65,12 @@ const T = {
     auth_pass_hint:       'Минимум 6 символов',
     err_username_taken:   'Этот ник уже занят',
     err_username_invalid: 'Ник: 3–20 символов, буквы/цифры/_',
+
+    menu_achievements:    'ДОСТИЖЕНИЯ',
+    achievements_title:   '🏅 ДОСТИЖЕНИЯ',
+    achievements_empty:   'Загрузка...',
+    achievement_unlocked: 'ДОСТИЖЕНИЕ ПОЛУЧЕНО',
+    achievement_pts:      'оч.',
   },
 
   en: {
@@ -133,6 +139,12 @@ const T = {
     auth_pass_hint:       'At least 6 characters',
     err_username_taken:   'This username is already taken',
     err_username_invalid: 'Username: 3–20 chars, letters/numbers/_',
+
+    menu_achievements:    'ACHIEVEMENTS',
+    achievements_title:   '🏅 ACHIEVEMENTS',
+    achievements_empty:   'Loading...',
+    achievement_unlocked: 'ACHIEVEMENT UNLOCKED',
+    achievement_pts:      'pts',
   },
 };
 

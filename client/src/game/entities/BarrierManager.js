@@ -62,6 +62,7 @@ export class BarrierManager {
     this._time    = 0;
     this._timer   = rnd(25, 35); // initial grace before first barrier
     this.playerHitByExplosion = false;
+    this.barriersDestroyed = 0;
 
     // Shared geometries — reused across all barriers
     this._cubeGeo = new THREE.BoxGeometry(CUBE_W, BARRIER_H, CUBE_W);
@@ -74,6 +75,7 @@ export class BarrierManager {
     this._time    = 0;
     this._timer   = rnd(25, 35);
     this.playerHitByExplosion = false;
+    this.barriersDestroyed = 0;
   }
 
   // playerY: doodler world Y, used for explosion damage check
@@ -207,13 +209,14 @@ export class BarrierManager {
     }
     if (barrier.type === 'armored') {
       barrier.hits--;
-      if (barrier.hits <= 0) { this._startDying(barrier); return true; }
+      if (barrier.hits <= 0) { this._startDying(barrier); this.barriersDestroyed++; return true; }
       // Crack color: 2 hits left = orange, 1 hit left = dark red
       if (barrier.mat) barrier.mat.color.setHex(barrier.hits === 2 ? 0xff8800 : 0xcc2200);
       return false;
     }
     // destroy, explosive
     this._startDying(barrier);
+    this.barriersDestroyed++;
     return true;
   }
 
