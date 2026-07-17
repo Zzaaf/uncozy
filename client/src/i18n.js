@@ -1,5 +1,8 @@
 const T = {
   ru: {
+    page_title:       'UNCOZY — Пиксельный платформер | Pixel Platformer Game',
+    page_description: 'UNCOZY — бесплатная онлайн-игра в пиксельном стиле. Прыгай выше, уничтожай врагов, покоряй уровни и попади в таблицу рекордов! Free pixel platformer: jump, shoot enemies, climb the leaderboard.',
+
     title:            'UNCOZY',
     subtitle:         '★ PIXEL EDITION ★',
 
@@ -65,6 +68,9 @@ const T = {
   },
 
   en: {
+    page_title:       'UNCOZY — Pixel Platformer Game | Пиксельная онлайн-игра',
+    page_description: 'UNCOZY — free online pixel platformer. Jump higher, shoot enemies, conquer levels and top the leaderboard! Бесплатная пиксельная игра с онлайн-таблицей рекордов.',
+
     title:            'UNCOZY',
     subtitle:         '★ PIXEL EDITION ★',
 
@@ -134,6 +140,10 @@ let _lang = 'ru';
 
 export function setLang(lang) {
   _lang = lang === 'en' ? 'en' : 'ru';
+  document.title = T[_lang].page_title;
+  document.documentElement.lang = _lang;
+  const descEl = document.querySelector('meta[name="description"]');
+  if (descEl) descEl.setAttribute('content', T[_lang].page_description);
 }
 
 export function getLang() {
