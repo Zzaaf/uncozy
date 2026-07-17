@@ -26,7 +26,7 @@ import { AchievementsModule } from './modules/achievements/achievements.module';
     ]),
 
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '../../', 'client', 'dist'),
+      rootPath: join(__dirname, '../../../', 'client', 'dist'),
       exclude: ['/api/{*path}'],
       serveStaticOptions: {
         maxAge: 1000 * 60 * 60 * 24 * 7,
